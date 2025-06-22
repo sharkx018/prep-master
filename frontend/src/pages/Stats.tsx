@@ -112,7 +112,7 @@ const Stats: React.FC = () => {
           </ResponsiveContainer>
           <div className="mt-4 text-center">
             <p className="text-2xl font-bold text-gray-900">
-              {stats.overall.progress_percentage.toFixed(1)}%
+              {(stats?.overall?.progress_percentage || 0).toFixed(1)}%
             </p>
             <p className="text-sm text-gray-600">Overall Completion</p>
           </div>
@@ -150,7 +150,7 @@ const Stats: React.FC = () => {
               <div className="mt-2">
                 <div className="flex justify-between text-sm text-gray-600 mb-1">
                   <span>Progress</span>
-                  <span>{category.progress_percentage.toFixed(1)}%</span>
+                  <span>{(category.progress_percentage || 0).toFixed(1)}%</span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div

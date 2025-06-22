@@ -74,7 +74,7 @@ const Dashboard: React.FC = () => {
   const statCards = [
     {
       title: 'Total Items',
-      value: stats.total_items,
+      value: stats?.total_items || 0,
       icon: BookOpen,
       color: 'bg-blue-500',
       lightColor: 'bg-blue-100',
@@ -82,7 +82,7 @@ const Dashboard: React.FC = () => {
     },
     {
       title: 'Completed',
-      value: stats.completed_items,
+      value: stats?.completed_items || 0,
       icon: CheckCircle,
       color: 'bg-green-500',
       lightColor: 'bg-green-100',
@@ -90,7 +90,7 @@ const Dashboard: React.FC = () => {
     },
     {
       title: 'Pending',
-      value: stats.pending_items,
+      value: stats?.pending_items || 0,
       icon: Clock,
       color: 'bg-yellow-500',
       lightColor: 'bg-yellow-100',
@@ -98,7 +98,7 @@ const Dashboard: React.FC = () => {
     },
     {
       title: 'Completion Cycles',
-      value: stats.completed_all_count,
+      value: stats?.completed_all_count || 0,
       icon: TrendingUp,
       color: 'bg-purple-500',
       lightColor: 'bg-purple-100',
@@ -160,31 +160,31 @@ const Dashboard: React.FC = () => {
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-xl font-bold text-gray-900">Overall Progress</h3>
           <div className="flex items-center space-x-2">
-            {stats.progress_percentage >= 80 && <Trophy className="h-6 w-6 text-yellow-500" />}
-            {stats.progress_percentage >= 50 && stats.progress_percentage < 80 && <Target className="h-6 w-6 text-blue-500" />}
-            {stats.progress_percentage < 50 && <Clock className="h-6 w-6 text-gray-500" />}
+            {(stats?.progress_percentage || 0) >= 80 && <Trophy className="h-6 w-6 text-yellow-500" />}
+            {(stats?.progress_percentage || 0) >= 50 && (stats?.progress_percentage || 0) < 80 && <Target className="h-6 w-6 text-blue-500" />}
+            {(stats?.progress_percentage || 0) < 50 && <Clock className="h-6 w-6 text-gray-500" />}
           </div>
         </div>
         <div className="relative">
           <div className="flex mb-3 items-center justify-between">
             <div>
               <span className="text-sm font-bold text-indigo-700">
-                {stats.completed_items} of {stats.total_items} items completed
+                {stats?.completed_items || 0} of {stats?.total_items || 0} items completed
               </span>
             </div>
             <div className="text-right">
               <span className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                {stats.progress_percentage.toFixed(1)}%
+                {(stats?.progress_percentage || 0).toFixed(1)}%
               </span>
             </div>
           </div>
           <div className="overflow-hidden h-4 text-xs flex rounded-full bg-gray-200 shadow-inner">
             <div
-              style={{ width: `${stats.progress_percentage}%` }}
+              style={{ width: `${stats?.progress_percentage || 0}%` }}
               className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-1000 ease-out rounded-full"
             />
           </div>
-          {stats.progress_percentage === 100 && (
+          {(stats?.progress_percentage || 0) === 100 && (
             <p className="mt-3 text-sm font-medium text-green-600 flex items-center">
               <CheckCircle className="h-4 w-4 mr-1" />
               Congratulations! You've completed all items!

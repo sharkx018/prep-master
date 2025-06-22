@@ -131,16 +131,16 @@ const Study: React.FC = () => {
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-gray-700">Overall Progress</h3>
             <span className="text-sm font-semibold text-gray-900">
-              {stats.completed_items} / {stats.total_items} items ({stats.progress_percentage.toFixed(1)}%)
+              {stats?.completed_items || 0} / {stats?.total_items || 0} items ({(stats?.progress_percentage || 0).toFixed(1)}%)
             </span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-3">
             <div
               className="bg-gradient-to-r from-indigo-500 to-purple-600 h-3 rounded-full transition-all duration-300"
-              style={{ width: `${stats.progress_percentage}%` }}
+              style={{ width: `${stats?.progress_percentage || 0}%` }}
             />
           </div>
-          {stats.completed_all_count > 0 && (
+          {stats && stats.completed_all_count > 0 && (
             <p className="mt-2 text-xs text-gray-600">
               Completion cycles: {stats.completed_all_count}
             </p>
