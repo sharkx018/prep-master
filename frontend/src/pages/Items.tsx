@@ -107,7 +107,7 @@ const Items: React.FC = () => {
   const handleToggleStatus = async (id: number, currentStatus: string) => {
     try {
       setUpdatingStatus(id);
-      // Toggle between done and pending
+      // Toggle between done and pending, or mark in-progress as done
       const newStatus = currentStatus === 'done' ? 'pending' : 'done';
       await itemsApi.updateStatus(id, newStatus);
       await fetchItems();
@@ -514,29 +514,35 @@ const Items: React.FC = () => {
                       >
                         <ExternalLink className="h-5 w-5" />
                       </a>
-                      {item.status !== 'in-progress' && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleToggleStatus(item.id, item.status);
-                          }}
-                          disabled={updatingStatus === item.id}
-                          className={`p-2 transition-colors ${
-                            item.status === 'done' 
-                              ? 'text-green-600 hover:text-gray-600' 
-                              : 'text-gray-400 hover:text-green-600'
-                          } disabled:opacity-50 disabled:cursor-not-allowed`}
-                          title={item.status === 'done' ? "Mark as pending" : "Mark as done"}
-                        >
-                          {updatingStatus === item.id ? (
-                            <Loader2 className="h-5 w-5 animate-spin" />
-                          ) : item.status === 'done' ? (
-                            <CheckCircle2 className="h-5 w-5 text-green-600" />
-                          ) : (
-                            <CheckCircle className="h-5 w-5" />
-                          )}
-                        </button>
-                      )}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleToggleStatus(item.id, item.status);
+                        }}
+                        disabled={updatingStatus === item.id}
+                        className={`p-2 transition-colors ${
+                          item.status === 'done' 
+                            ? 'text-green-600 hover:text-gray-600' 
+                            : item.status === 'in-progress'
+                            ? 'text-gray-400 hover:text-green-600'
+                            : 'text-gray-400 hover:text-green-600'
+                        } disabled:opacity-50 disabled:cursor-not-allowed`}
+                        title={
+                          item.status === 'done' 
+                            ? "Mark as pending" 
+                            : item.status === 'in-progress'
+                            ? "Mark as done"
+                            : "Mark as done"
+                        }
+                      >
+                        {updatingStatus === item.id ? (
+                          <Loader2 className="h-5 w-5 animate-spin" />
+                        ) : item.status === 'done' ? (
+                          <CheckCircle2 className="h-5 w-5 text-green-600" />
+                        ) : (
+                          <CheckCircle className="h-5 w-5" />
+                        )}
+                      </button>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
