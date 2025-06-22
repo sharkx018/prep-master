@@ -43,12 +43,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               </div>
               <div className="ml-4">
                 <h1 className="text-xl font-bold text-white">PrepMaster Pro</h1>
-                <p className="text-xs text-indigo-200">by Mukul Verma</p>
               </div>
             </div>
             <div className="flex items-center space-x-4">
               <a
-                href="https://github.com/mukulverma"
+                href="https://github.com/sharkx018"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-white/80 hover:text-white transition-colors"
@@ -57,7 +56,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <Github className="h-5 w-5" />
               </a>
               <a
-                href="https://linkedin.com/in/mukulverma"
+                href="https://www.linkedin.com/in/mukul-verma-03151a139/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-white/80 hover:text-white transition-colors"
@@ -107,7 +106,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <div className="p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg">
               <p className="text-xs text-gray-600 text-center">
                 Made with ❤️ by<br />
-                <span className="font-semibold text-indigo-600">Mukul Verma</span>
+                <span className="font-semibold text-indigo-600">vrma018_</span>
               </p>
             </div>
           </div>

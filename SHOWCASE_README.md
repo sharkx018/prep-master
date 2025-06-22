@@ -153,12 +153,12 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## 👨‍💻 Author
 
 **Mukul Verma**
-- GitHub: [@mukulverma](https://github.com/mukulverma)
-- LinkedIn: [Mukul Verma](https://linkedin.com/in/mukulverma)
+- GitHub: [@mukulverma](https://github.com/sharkx018)
+- LinkedIn: [Mukul Verma](https://www.linkedin.com/in/mukul-verma-03151a139/)
 
 ---
 
 <div align="center">
-  <p>Built with ❤️ by Mukul Verma</p>
+  <p>Built by vrma018_</p>
   <p>⭐ Star this repository if you find it helpful!</p>
 </div> 
