@@ -23,13 +23,17 @@ const AddItem: React.FC = () => {
   const fetchSubcategories = async (category: string) => {
     try {
       const response = await itemsApi.getSubcategories(category);
-      setSubcategories(response.subcategories);
+      const subs = response?.subcategories && Array.isArray(response.subcategories) 
+        ? response.subcategories 
+        : [];
+      setSubcategories(subs);
       // Set default subcategory when category changes
-      if (response.subcategories.length > 0) {
-        setFormData(prev => ({ ...prev, subcategory: response.subcategories[0] }));
+      if (subs.length > 0) {
+        setFormData(prev => ({ ...prev, subcategory: subs[0] }));
       }
     } catch (err) {
       console.error('Failed to fetch subcategories', err);
+      setSubcategories([]); // Set empty array on error
     }
   };
 
@@ -134,13 +138,17 @@ const AddItem: React.FC = () => {
                 onChange={handleChange}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
               >
-                {subcategories.map((sub) => (
-                  <option key={sub} value={sub}>
-                    {sub.split('-').map(word => 
-                      word.charAt(0).toUpperCase() + word.slice(1)
-                    ).join(' ')}
-                  </option>
-                ))}
+                {subcategories && subcategories.length > 0 ? (
+                  subcategories.map((sub) => (
+                    <option key={sub} value={sub}>
+                      {sub.split('-').map(word => 
+                        word.charAt(0).toUpperCase() + word.slice(1)
+                      ).join(' ')}
+                    </option>
+                  ))
+                ) : (
+                  <option value="">No subcategories available</option>
+                )}
               </select>
             </div>
           </div>

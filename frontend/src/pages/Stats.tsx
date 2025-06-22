@@ -58,12 +58,14 @@ const Stats: React.FC = () => {
     { name: 'Pending', value: stats.overall.pending_items, color: '#f59e0b' },
   ];
 
-  const categoryData = stats.categories ? stats.categories.map(cat => ({
-    name: cat.category.toUpperCase(),
-    completed: cat.completed_items,
-    pending: cat.pending_items,
-    total: cat.total_items,
-  })) : [];
+  const categoryData = stats?.categories && Array.isArray(stats.categories) 
+    ? stats.categories.map(cat => ({
+        name: cat.category.toUpperCase(),
+        completed: cat.completed_items,
+        pending: cat.pending_items,
+        total: cat.total_items,
+      })) 
+    : [];
 
   const getCategoryColor = (category: string) => {
     switch (category.toLowerCase()) {
@@ -135,7 +137,7 @@ const Stats: React.FC = () => {
       </div>
 
       {/* Category Details */}
-      {stats.categories && stats.categories.length > 0 && (
+      {stats?.categories && Array.isArray(stats.categories) && stats.categories.length > 0 && (
         <div className="space-y-6">
           {stats.categories.map((category) => (
             <div key={category.category} className="bg-white rounded-lg shadow p-6">
@@ -150,7 +152,7 @@ const Stats: React.FC = () => {
               <div className="mt-2">
                 <div className="flex justify-between text-sm text-gray-600 mb-1">
                   <span>Progress</span>
-                  <span>{(category.progress_percentage || 0).toFixed(1)}%</span>
+                  <span className="font-medium">{(category.progress_percentage || 0).toFixed(1)}%</span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div
@@ -166,7 +168,7 @@ const Stats: React.FC = () => {
 
             {/* Subcategory Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {category.subcategories && category.subcategories.map((sub) => (
+              {category.subcategories && Array.isArray(category.subcategories) && category.subcategories.map((sub) => (
                 <div key={sub.subcategory} className="border rounded-lg p-4">
                   <h4 className="text-sm font-medium text-gray-900 mb-2">
                     {sub.subcategory.split('-').map(word => 

@@ -29,10 +29,11 @@ const Items: React.FC = () => {
         if (statusFilter) filters.status = statusFilter;
         
         const data = await itemsApi.getItems(filters);
-        setItems(data || []);
+        setItems(Array.isArray(data) ? data : []);
       } catch (err) {
         setError('Failed to fetch items');
         console.error(err);
+        setItems([]);
       } finally {
         setLoading(false);
       }
@@ -50,10 +51,11 @@ const Items: React.FC = () => {
       if (statusFilter) filters.status = statusFilter;
       
       const data = await itemsApi.getItems(filters);
-      setItems(data || []);
+      setItems(Array.isArray(data) ? data : []);
     } catch (err) {
       setError('Failed to fetch items');
       console.error(err);
+      setItems([]);
     } finally {
       setLoading(false);
     }
@@ -181,7 +183,7 @@ const Items: React.FC = () => {
         <div className="flex items-center justify-center h-64">
           <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
         </div>
-      ) : !items || items.length === 0 ? (
+      ) : !Array.isArray(items) || items.length === 0 ? (
         <div className="bg-white rounded-lg shadow p-8 text-center">
           <p className="text-gray-600">No items found. Try adjusting your filters or add new items.</p>
         </div>
