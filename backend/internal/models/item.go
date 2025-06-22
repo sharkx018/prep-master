@@ -1,6 +1,9 @@
 package models
 
 import (
+	"database/sql/driver"
+	"encoding/json"
+	"fmt"
 	"time"
 )
 
@@ -22,32 +25,62 @@ const (
 	StatusDone       Status = "done"
 )
 
+// Attachments represents a JSON map for dynamic attributes
+type Attachments map[string]string
+
+// Value implements the driver.Valuer interface for database storage
+func (a Attachments) Value() (driver.Value, error) {
+	if a == nil {
+		return "{}", nil
+	}
+	return json.Marshal(a)
+}
+
+// Scan implements the sql.Scanner interface for database retrieval
+func (a *Attachments) Scan(value interface{}) error {
+	if value == nil {
+		*a = make(Attachments)
+		return nil
+	}
+
+	bytes, ok := value.([]byte)
+	if !ok {
+		return fmt.Errorf("cannot scan %T into Attachments", value)
+	}
+
+	return json.Unmarshal(bytes, a)
+}
+
 // Item represents an interview preparation item
 type Item struct {
-	ID          int        `json:"id" db:"id"`
-	Title       string     `json:"title" db:"title"`
-	Link        string     `json:"link" db:"link"`
-	Category    Category   `json:"category" db:"category"`
-	Subcategory string     `json:"subcategory" db:"subcategory"`
-	Status      Status     `json:"status" db:"status"`
-	CreatedAt   time.Time  `json:"created_at" db:"created_at"`
-	CompletedAt *time.Time `json:"completed_at,omitempty" db:"completed_at"`
+	ID          int         `json:"id" db:"id"`
+	Title       string      `json:"title" db:"title"`
+	Link        string      `json:"link" db:"link"`
+	Category    Category    `json:"category" db:"category"`
+	Subcategory string      `json:"subcategory" db:"subcategory"`
+	Status      Status      `json:"status" db:"status"`
+	Starred     bool        `json:"starred" db:"starred"`
+	Attachments Attachments `json:"attachments" db:"attachments"`
+	CreatedAt   time.Time   `json:"created_at" db:"created_at"`
+	CompletedAt *time.Time  `json:"completed_at,omitempty" db:"completed_at"`
 }
 
 // CreateItemRequest represents the request payload for creating an item
 type CreateItemRequest struct {
-	Title       string   `json:"title" binding:"required"`
-	Link        string   `json:"link" binding:"required"`
-	Category    Category `json:"category" binding:"required"`
-	Subcategory string   `json:"subcategory" binding:"required"`
+	Title       string      `json:"title" binding:"required"`
+	Link        string      `json:"link" binding:"required"`
+	Category    Category    `json:"category" binding:"required"`
+	Subcategory string      `json:"subcategory" binding:"required"`
+	Attachments Attachments `json:"attachments,omitempty"`
 }
 
 // UpdateItemRequest represents the request payload for updating an item
 type UpdateItemRequest struct {
-	Title       *string   `json:"title,omitempty"`
-	Link        *string   `json:"link,omitempty"`
-	Category    *Category `json:"category,omitempty"`
-	Subcategory *string   `json:"subcategory,omitempty"`
+	Title       *string      `json:"title,omitempty"`
+	Link        *string      `json:"link,omitempty"`
+	Category    *Category    `json:"category,omitempty"`
+	Subcategory *string      `json:"subcategory,omitempty"`
+	Attachments *Attachments `json:"attachments,omitempty"`
 }
 
 // ItemFilter represents filters for querying items

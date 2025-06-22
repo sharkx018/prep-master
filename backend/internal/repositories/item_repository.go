@@ -20,15 +20,21 @@ func NewItemRepository(db *sql.DB) *ItemRepository {
 
 // Create adds a new item to the database
 func (r *ItemRepository) Create(req *models.CreateItemRequest) (*models.Item, error) {
+	// Initialize attachments if nil
+	attachments := req.Attachments
+	if attachments == nil {
+		attachments = make(models.Attachments)
+	}
+
 	query := `
-		INSERT INTO items (title, link, category, subcategory) 
-		VALUES ($1, $2, $3, $4) 
-		RETURNING id, title, link, category, subcategory, status, created_at, completed_at`
+		INSERT INTO items (title, link, category, subcategory, attachments) 
+		VALUES ($1, $2, $3, $4, $5) 
+		RETURNING id, title, link, category, subcategory, status, starred, attachments, created_at, completed_at`
 
 	var item models.Item
-	err := r.db.QueryRow(query, req.Title, req.Link, req.Category, req.Subcategory).Scan(
+	err := r.db.QueryRow(query, req.Title, req.Link, req.Category, req.Subcategory, attachments).Scan(
 		&item.ID, &item.Title, &item.Link, &item.Category, &item.Subcategory,
-		&item.Status, &item.CreatedAt, &item.CompletedAt,
+		&item.Status, &item.Starred, &item.Attachments, &item.CreatedAt, &item.CompletedAt,
 	)
 
 	if err != nil {
@@ -41,14 +47,14 @@ func (r *ItemRepository) Create(req *models.CreateItemRequest) (*models.Item, er
 // GetByID retrieves an item by its ID
 func (r *ItemRepository) GetByID(id int) (*models.Item, error) {
 	query := `
-		SELECT id, title, link, category, subcategory, status, created_at, completed_at 
+		SELECT id, title, link, category, subcategory, status, starred, attachments, created_at, completed_at 
 		FROM items 
 		WHERE id = $1`
 
 	var item models.Item
 	err := r.db.QueryRow(query, id).Scan(
 		&item.ID, &item.Title, &item.Link, &item.Category, &item.Subcategory,
-		&item.Status, &item.CreatedAt, &item.CompletedAt,
+		&item.Status, &item.Starred, &item.Attachments, &item.CreatedAt, &item.CompletedAt,
 	)
 
 	if err == sql.ErrNoRows {
@@ -63,7 +69,7 @@ func (r *ItemRepository) GetByID(id int) (*models.Item, error) {
 
 // GetAll retrieves items with optional filtering
 func (r *ItemRepository) GetAll(filter *models.ItemFilter) ([]*models.Item, error) {
-	query := "SELECT id, title, link, category, subcategory, status, created_at, completed_at FROM items WHERE 1=1"
+	query := "SELECT id, title, link, category, subcategory, status, starred, attachments, created_at, completed_at FROM items WHERE 1=1"
 	args := []interface{}{}
 	argCount := 0
 
@@ -111,7 +117,7 @@ func (r *ItemRepository) GetAll(filter *models.ItemFilter) ([]*models.Item, erro
 		var item models.Item
 		err := rows.Scan(
 			&item.ID, &item.Title, &item.Link, &item.Category, &item.Subcategory,
-			&item.Status, &item.CreatedAt, &item.CompletedAt,
+			&item.Status, &item.Starred, &item.Attachments, &item.CreatedAt, &item.CompletedAt,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan item: %w", err)
@@ -129,7 +135,7 @@ func (r *ItemRepository) GetAll(filter *models.ItemFilter) ([]*models.Item, erro
 // GetRandomPending retrieves a random item with status 'pending'
 func (r *ItemRepository) GetRandomPending() (*models.Item, error) {
 	query := `
-		SELECT id, title, link, category, subcategory, status, created_at, completed_at 
+		SELECT id, title, link, category, subcategory, status, starred, attachments, created_at, completed_at 
 		FROM items 
 		WHERE status = 'pending' 
 		ORDER BY RANDOM() 
@@ -138,7 +144,7 @@ func (r *ItemRepository) GetRandomPending() (*models.Item, error) {
 	var item models.Item
 	err := r.db.QueryRow(query).Scan(
 		&item.ID, &item.Title, &item.Link, &item.Category, &item.Subcategory,
-		&item.Status, &item.CreatedAt, &item.CompletedAt,
+		&item.Status, &item.Starred, &item.Attachments, &item.CreatedAt, &item.CompletedAt,
 	)
 
 	if err == sql.ErrNoRows {
@@ -154,7 +160,7 @@ func (r *ItemRepository) GetRandomPending() (*models.Item, error) {
 // GetInProgressItem retrieves the current in-progress item if any
 func (r *ItemRepository) GetInProgressItem() (*models.Item, error) {
 	query := `
-		SELECT id, title, link, category, subcategory, status, created_at, completed_at 
+		SELECT id, title, link, category, subcategory, status, starred, attachments, created_at, completed_at 
 		FROM items 
 		WHERE status = 'in-progress' 
 		LIMIT 1`
@@ -162,7 +168,7 @@ func (r *ItemRepository) GetInProgressItem() (*models.Item, error) {
 	var item models.Item
 	err := r.db.QueryRow(query).Scan(
 		&item.ID, &item.Title, &item.Link, &item.Category, &item.Subcategory,
-		&item.Status, &item.CreatedAt, &item.CompletedAt,
+		&item.Status, &item.Starred, &item.Attachments, &item.CreatedAt, &item.CompletedAt,
 	)
 
 	if err == sql.ErrNoRows {
@@ -194,12 +200,12 @@ func (r *ItemRepository) SetInProgress(id int) (*models.Item, error) {
 		UPDATE items 
 		SET status = 'in-progress' 
 		WHERE id = $1 AND status = 'pending'
-		RETURNING id, title, link, category, subcategory, status, created_at, completed_at`
+		RETURNING id, title, link, category, subcategory, status, starred, attachments, created_at, completed_at`
 
 	var item models.Item
 	err = tx.QueryRow(query, id).Scan(
 		&item.ID, &item.Title, &item.Link, &item.Category, &item.Subcategory,
-		&item.Status, &item.CreatedAt, &item.CompletedAt,
+		&item.Status, &item.Starred, &item.Attachments, &item.CreatedAt, &item.CompletedAt,
 	)
 
 	if err == sql.ErrNoRows {
@@ -222,12 +228,12 @@ func (r *ItemRepository) MarkComplete(id int) (*models.Item, error) {
 		UPDATE items 
 		SET status = 'done', completed_at = CURRENT_TIMESTAMP 
 		WHERE id = $1 AND status = 'in-progress'
-		RETURNING id, title, link, category, subcategory, status, created_at, completed_at`
+		RETURNING id, title, link, category, subcategory, status, starred, attachments, created_at, completed_at`
 
 	var item models.Item
 	err := r.db.QueryRow(query, id).Scan(
 		&item.ID, &item.Title, &item.Link, &item.Category, &item.Subcategory,
-		&item.Status, &item.CreatedAt, &item.CompletedAt,
+		&item.Status, &item.Starred, &item.Attachments, &item.CreatedAt, &item.CompletedAt,
 	)
 
 	if err == sql.ErrNoRows {
@@ -270,6 +276,12 @@ func (r *ItemRepository) Update(id int, req *models.UpdateItemRequest) (*models.
 		args = append(args, *req.Subcategory)
 	}
 
+	if req.Attachments != nil {
+		argCount++
+		setParts = append(setParts, fmt.Sprintf("attachments = $%d", argCount))
+		args = append(args, *req.Attachments)
+	}
+
 	if len(setParts) == 0 {
 		return nil, fmt.Errorf("no fields to update")
 	}
@@ -281,13 +293,13 @@ func (r *ItemRepository) Update(id int, req *models.UpdateItemRequest) (*models.
 		UPDATE items 
 		SET %s 
 		WHERE id = $%d
-		RETURNING id, title, link, category, subcategory, status, created_at, completed_at`,
+		RETURNING id, title, link, category, subcategory, status, starred, attachments, created_at, completed_at`,
 		strings.Join(setParts, ", "), argCount)
 
 	var item models.Item
 	err := r.db.QueryRow(query, args...).Scan(
 		&item.ID, &item.Title, &item.Link, &item.Category, &item.Subcategory,
-		&item.Status, &item.CreatedAt, &item.CompletedAt,
+		&item.Status, &item.Starred, &item.Attachments, &item.CreatedAt, &item.CompletedAt,
 	)
 
 	if err == sql.ErrNoRows {
@@ -442,4 +454,65 @@ func (r *ItemRepository) CountPending() (int, error) {
 		return 0, fmt.Errorf("failed to count pending items: %w", err)
 	}
 	return count, nil
+}
+
+// ToggleStar toggles the starred status of an item
+func (r *ItemRepository) ToggleStar(id int) (*models.Item, error) {
+	query := `
+		UPDATE items 
+		SET starred = NOT starred 
+		WHERE id = $1
+		RETURNING id, title, link, category, subcategory, status, starred, attachments, created_at, completed_at`
+
+	var item models.Item
+	err := r.db.QueryRow(query, id).Scan(
+		&item.ID, &item.Title, &item.Link, &item.Category, &item.Subcategory,
+		&item.Status, &item.Starred, &item.Attachments, &item.CreatedAt, &item.CompletedAt,
+	)
+
+	if err == sql.ErrNoRows {
+		return nil, fmt.Errorf("item not found")
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to toggle star: %w", err)
+	}
+
+	return &item, nil
+}
+
+// UpdateStatus updates the status of an item
+func (r *ItemRepository) UpdateStatus(id int, status models.Status) (*models.Item, error) {
+	var query string
+	var args []interface{}
+
+	if status == models.StatusDone {
+		query = `
+			UPDATE items 
+			SET status = $2, completed_at = CURRENT_TIMESTAMP 
+			WHERE id = $1
+			RETURNING id, title, link, category, subcategory, status, starred, attachments, created_at, completed_at`
+	} else {
+		query = `
+			UPDATE items 
+			SET status = $2, completed_at = NULL 
+			WHERE id = $1
+			RETURNING id, title, link, category, subcategory, status, starred, attachments, created_at, completed_at`
+	}
+
+	args = []interface{}{id, status}
+
+	var item models.Item
+	err := r.db.QueryRow(query, args...).Scan(
+		&item.ID, &item.Title, &item.Link, &item.Category, &item.Subcategory,
+		&item.Status, &item.Starred, &item.Attachments, &item.CreatedAt, &item.CompletedAt,
+	)
+
+	if err == sql.ErrNoRows {
+		return nil, fmt.Errorf("item not found")
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to update status: %w", err)
+	}
+
+	return &item, nil
 }

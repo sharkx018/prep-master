@@ -18,6 +18,8 @@ export interface Item {
   category: 'dsa' | 'lld' | 'hld';
   subcategory: string;
   status: 'done' | 'pending' | 'in-progress';
+  starred: boolean;
+  attachments: { [key: string]: string };
   created_at: string;
   completed_at?: string;
 }
@@ -27,6 +29,7 @@ export interface CreateItemRequest {
   link: string;
   category: 'dsa' | 'lld' | 'hld';
   subcategory: string;
+  attachments?: { [key: string]: string };
 }
 
 export interface UpdateItemRequest {
@@ -34,6 +37,7 @@ export interface UpdateItemRequest {
   link?: string;
   category?: 'dsa' | 'lld' | 'hld';
   subcategory?: string;
+  attachments?: { [key: string]: string };
 }
 
 export interface Stats {
@@ -140,6 +144,18 @@ export const itemsApi = {
 
   skipItem: async (): Promise<Item> => {
     const response = await api.post('/items/skip');
+    return response.data;
+  },
+
+  // Toggle star status
+  toggleStar: async (id: number): Promise<Item> => {
+    const response = await api.put<Item>(`/items/${id}/star`);
+    return response.data;
+  },
+
+  // Update item status
+  updateStatus: async (id: number, status: 'done' | 'pending'): Promise<Item> => {
+    const response = await api.put<Item>(`/items/${id}/status`, { status });
     return response.data;
   },
 };

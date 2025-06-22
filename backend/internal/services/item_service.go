@@ -202,3 +202,31 @@ func (s *ItemService) GetCommonSubcategories(category models.Category) ([]string
 
 	return subcategories, nil
 }
+
+// ToggleStar toggles the starred status of an item
+func (s *ItemService) ToggleStar(id int) (*models.Item, error) {
+	if id <= 0 {
+		return nil, fmt.Errorf("invalid item ID")
+	}
+
+	return s.itemRepo.ToggleStar(id)
+}
+
+// UpdateStatus updates the status of an item
+func (s *ItemService) UpdateStatus(id int, status models.Status) (*models.Item, error) {
+	if id <= 0 {
+		return nil, fmt.Errorf("invalid item ID")
+	}
+
+	// Validate status
+	if !models.IsValidStatus(status) {
+		return nil, fmt.Errorf("invalid status: %s", status)
+	}
+
+	// Don't allow setting status to in-progress through this method
+	if status == models.StatusInProgress {
+		return nil, fmt.Errorf("cannot set status to in-progress directly")
+	}
+
+	return s.itemRepo.UpdateStatus(id, status)
+}

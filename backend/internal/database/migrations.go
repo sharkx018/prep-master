@@ -14,6 +14,8 @@ func RunMigrations(db *sql.DB) error {
 		insertInitialAppStats,
 		addSubcategoryColumn,
 		fixStatusValues,
+		addStarredColumn,
+		addAttachmentsColumn,
 	}
 
 	for i, migration := range migrations {
@@ -91,5 +93,26 @@ BEGIN
     
     -- Add the check constraint back with the correct values
     ALTER TABLE items ADD CONSTRAINT items_status_check CHECK (status IN ('done', 'pending', 'in-progress'));
+END $$;
+`
+
+const addStarredColumn = `
+DO $$ 
+BEGIN 
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name='items' AND column_name='starred') THEN
+        ALTER TABLE items ADD COLUMN starred BOOLEAN NOT NULL DEFAULT false;
+        CREATE INDEX IF NOT EXISTS idx_items_starred ON items(starred);
+    END IF;
+END $$;
+`
+
+const addAttachmentsColumn = `
+DO $$ 
+BEGIN 
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name='items' AND column_name='attachments') THEN
+        ALTER TABLE items ADD COLUMN attachments JSONB DEFAULT '{}';
+    END IF;
 END $$;
 `

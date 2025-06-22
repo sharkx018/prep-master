@@ -76,6 +76,8 @@ func (s *Server) setupRoutes() {
 			items.GET("/:id", s.itemHandler.GetItem)
 			items.PUT("/:id", s.itemHandler.UpdateItem)
 			items.PUT("/:id/complete", s.itemHandler.CompleteItem)
+			items.PUT("/:id/star", s.itemHandler.ToggleStar)
+			items.PUT("/:id/status", s.itemHandler.UpdateStatus)
 			items.DELETE("/:id", s.itemHandler.DeleteItem)
 			items.POST("/reset", s.itemHandler.ResetItems)
 		}

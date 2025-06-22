@@ -237,3 +237,56 @@ func (h *ItemHandler) GetSubcategories(c *gin.Context) {
 		"subcategories": subcategories,
 	})
 }
+
+// ToggleStar handles PUT /items/:id/star
+func (h *ItemHandler) ToggleStar(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid item ID"})
+		return
+	}
+
+	item, err := h.itemService.ToggleStar(id)
+	if err != nil {
+		if err.Error() == "item not found" {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Item not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, item)
+}
+
+// UpdateStatus handles PUT /items/:id/status
+func (h *ItemHandler) UpdateStatus(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid item ID"})
+		return
+	}
+
+	var req struct {
+		Status string `json:"status" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	status := models.Status(req.Status)
+	item, err := h.itemService.UpdateStatus(id, status)
+	if err != nil {
+		if err.Error() == "item not found" {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Item not found"})
+			return
+		}
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, item)
+}

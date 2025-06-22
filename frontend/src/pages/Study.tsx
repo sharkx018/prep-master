@@ -4,7 +4,11 @@ import {
   CheckCircle, 
   RefreshCw, 
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Star,
+  Link,
+  Hash,
+  Info
 } from 'lucide-react';
 import { itemsApi, statsApi, Item, Stats } from '../services/api';
 
@@ -116,6 +120,53 @@ const Study: React.FC = () => {
     }
   };
 
+  const isValidUrl = (string: string) => {
+    try {
+      new URL(string);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  };
+
+  const renderAttachments = (attachments: { [key: string]: string }) => {
+    if (!attachments || Object.keys(attachments).length === 0) return null;
+
+    return (
+      <div className="mt-6 mb-6 bg-gray-50 rounded-lg p-4">
+        <div className="flex items-center mb-3">
+          <Info className="h-5 w-5 text-gray-600 mr-2" />
+          <h4 className="text-sm font-semibold text-gray-900">Additional Info</h4>
+        </div>
+        <div className="space-y-2">
+          {Object.entries(attachments).map(([key, value]) => (
+            <div key={key} className="flex items-start">
+              {isValidUrl(value) ? (
+                <a
+                  href={value}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center bg-white rounded-md px-3 py-2 shadow-sm border border-gray-200 hover:border-indigo-300 hover:shadow-md transition-all group"
+                >
+                  <Link className="h-4 w-4 text-indigo-600 mr-2 flex-shrink-0 group-hover:text-indigo-700" />
+                  <span className="text-sm font-medium text-indigo-600 group-hover:text-indigo-700 underline">
+                    {key}
+                  </span>
+                </a>
+              ) : (
+                <div className="flex items-center bg-white rounded-md px-3 py-2 shadow-sm border border-gray-200">
+                  <Hash className="h-4 w-4 text-gray-500 mr-2 flex-shrink-0" />
+                  <span className="text-sm font-medium text-gray-700 mr-2">{key}:</span>
+                  <span className="text-sm text-gray-900">{value}</span>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div>
       <div className="mb-8">
@@ -203,6 +254,9 @@ const Study: React.FC = () => {
                 <span className="inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
                   {currentItem.subcategory}
                 </span>
+                {currentItem.starred && (
+                  <Star className="h-5 w-5 text-yellow-500 fill-current" />
+                )}
               </div>
             </div>
 
@@ -210,11 +264,13 @@ const Study: React.FC = () => {
               {currentItem.title}
             </h3>
 
-            <p className="text-sm text-gray-600 mb-6">
+            <p className="text-sm text-gray-600 mb-4">
               Category: {getCategoryFullName(currentItem.category)}
             </p>
 
-            <div className="flex items-center justify-between">
+            {renderAttachments(currentItem.attachments)}
+
+            <div className="flex items-center justify-between mt-6">
               <a
                 href={currentItem.link}
                 target="_blank"
