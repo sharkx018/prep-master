@@ -8,6 +8,11 @@ Thumbs.db
 *.swp
 *.swo
 
+# Environment files
+.env
+.env.local
+.env.*.local
+
 # Backend
 backend/.env
 backend/main
@@ -16,6 +21,8 @@ backend/*.dll
 backend/*.so
 backend/*.dylib
 backend/vendor/
+backend/tmp/
+backend/.air.toml.tmp
 
 # Frontend
 frontend/node_modules/
@@ -28,9 +35,16 @@ frontend/npm-debug.log*
 frontend/yarn-debug.log*
 frontend/yarn-error.log*
 
+# Docker
+docker-compose.override.yml
+.dockerignore.local
+
 # Logs
 *.log
 
 # Temporary files
 *.tmp
-*.temp 
+*.temp
+
+# Database backups
+backups/ 

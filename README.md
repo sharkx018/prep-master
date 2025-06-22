@@ -10,6 +10,28 @@ interview-prep-app/
 │   ├── cmd/
 │   │   └── server/
 │   │       └── main.go      # Application entry point
+│   │   ├── internal/
+│   │   │   ├── config/          # Configuration management
+│   │   │   │   └── config.go
+│   │   │   ├── models/          # Data models and types
+│   │   │   │   ├── item.go
+│   │   │   │   └── stats.go
+│   │   │   ├── database/        # Database connection and migrations
+│   │   │   │   ├── connection.go
+│   │   │   │   └── migrations.go
+│   │   │   ├── repositories/    # Data access layer
+│   │   │   │   ├── item_repository.go
+│   │   │   │   └── stats_repository.go
+│   │   │   ├── services/        # Business logic layer
+│   │   │   │   ├── item_service.go
+│   │   │   │   └── stats_service.go
+│   │   │   └── handlers/        # HTTP request handlers
+│   │   │       ├── item_handler.go
+│   │   │       └── stats_handler.go
+│   │   ├── pkg/
+│   │   │   └── server/          # HTTP server setup
+│   │   │       └── server.go
+│   │   ├── go.mod
 │   ├── internal/
 │   │   ├── config/          # Configuration management
 │   │   │   └── config.go
@@ -340,26 +362,58 @@ curl "http://localhost:8080/api/v1/items?limit=10&offset=20"
 
 ## 🚀 Deployment
 
-### Using Docker
+### Using Docker (Full Stack)
 
-#### Backend
+#### Quick Start with Docker Compose
 ```bash
-cd backend
-docker build -t interview-prep-backend .
-docker run -p 8080:8080 --env-file .env interview-prep-backend
+# Clone the repository
+git clone <your-repo-url>
+cd interview-prep-app
+
+# Copy environment variables
+cp env.example .env
+
+# Start everything (database, backend, frontend)
+make dev    # For development with hot reload
+# OR
+make prod   # For production build
 ```
 
-#### Frontend
+#### Docker Commands
 ```bash
-cd frontend
-docker build -t interview-prep-frontend .
-docker run -p 3000:3000 interview-prep-frontend
+# Start services
+make up          # Start in background
+make dev         # Start with hot reload
+make prod        # Start production build
+
+# Stop services
+make down        # Stop all containers
+
+# View logs
+make logs        # View all logs
+docker-compose logs backend  # Backend logs only
+docker-compose logs frontend # Frontend logs only
+
+# Access containers
+make db-shell       # PostgreSQL shell
+make backend-shell  # Backend container shell
+make frontend-shell # Frontend container shell
+
+# Clean up
+make clean       # Remove all containers and volumes
 ```
 
-#### Docker Compose (Full Stack)
+#### Manual Docker Commands
 ```bash
-cd backend
+# Development with hot reload
+docker-compose -f docker-compose.dev.yml up
+
+# Production build
 docker-compose up
+
+# Build specific service
+docker-compose build backend
+docker-compose build frontend
 ```
 
 ### Deployment Platforms
