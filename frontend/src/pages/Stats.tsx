@@ -45,7 +45,7 @@ const Stats: React.FC = () => {
     );
   }
 
-  if (error || !stats) {
+  if (error || !stats || !stats.overall) {
     return (
       <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
         {error || 'Failed to load statistics'}
@@ -54,8 +54,8 @@ const Stats: React.FC = () => {
   }
 
   const pieData = [
-    { name: 'Completed', value: stats.overall.completed_items, color: '#10b981' },
-    { name: 'Pending', value: stats.overall.pending_items, color: '#f59e0b' },
+    { name: 'Completed', value: stats?.overall?.completed_items || 0, color: '#10b981' },
+    { name: 'Pending', value: stats?.overall?.pending_items || 0, color: '#f59e0b' },
   ];
 
   const categoryData = stats?.categories && Array.isArray(stats.categories) 
@@ -206,15 +206,17 @@ const Stats: React.FC = () => {
       )}
 
       {/* Summary Card */}
-      <div className="mt-8 bg-indigo-50 rounded-lg p-6">
-        <h3 className="text-lg font-medium text-indigo-900 mb-2">
-          Completion Cycles: {stats.overall.completed_all_count}
-        </h3>
-        <p className="text-sm text-indigo-700">
-          You've completed all items {stats.overall.completed_all_count} time{stats.overall.completed_all_count !== 1 ? 's' : ''}.
-          {stats.overall.completed_all_count > 0 && ' Great job on your consistency!'}
-        </p>
-      </div>
+      {stats?.overall && (
+        <div className="mt-8 bg-indigo-50 rounded-lg p-6">
+          <h3 className="text-lg font-medium text-indigo-900 mb-2">
+            Completion Cycles: {stats.overall.completed_all_count || 0}
+          </h3>
+          <p className="text-sm text-indigo-700">
+            You've completed all items {stats.overall.completed_all_count || 0} time{(stats.overall.completed_all_count || 0) !== 1 ? 's' : ''}.
+            {(stats.overall.completed_all_count || 0) > 0 && ' Great job on your consistency!'}
+          </p>
+        </div>
+      )}
     </div>
   );
 };
