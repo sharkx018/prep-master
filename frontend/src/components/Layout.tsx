@@ -79,7 +79,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           <div className="flex-1 p-4 overflow-y-auto">
             <div className="mb-6 p-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg border border-indigo-100">
               <h3 className="text-sm font-semibold text-indigo-900 mb-1">Welcome back!</h3>
-              <p className="text-xs text-indigo-700">Keep crushing those interviews 🚀</p>
+              <p className="text-xs text-indigo-700">Keep crushing 🚀</p>
             </div>
             <ul className="space-y-1">
               {navigation.map((item) => {
@@ -105,7 +105,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           <div className="flex-shrink-0 p-4 border-t border-gray-100">
             <div className="p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg">
               <p className="text-xs text-gray-600 text-center">
-                Made with ❤️ by<br />
                 <span className="font-semibold text-indigo-600">vrma018_</span>
               </p>
             </div>
