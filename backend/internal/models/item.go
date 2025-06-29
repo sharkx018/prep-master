@@ -194,7 +194,7 @@ var CommonSubcategories = map[Category][]string{
 	CategoryLLD: {
 		"object-oriented-programming",
 		"design-principles",
-		"UML",
+		"uml",
 		"design-patterns-creational",
 		"design-patterns-structural",
 		"design-patterns-behavioral",
