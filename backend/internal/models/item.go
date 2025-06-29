@@ -205,5 +205,6 @@ var CommonSubcategories = map[Category][]string{
 		"distributed-systems", "microservices", "load-balancing",
 		"caching", "databases", "messaging", "storage", "cdn",
 		"monitoring", "security", "scalability", "reliability", "other",
+		"system-design-questions",
 	},
 }
