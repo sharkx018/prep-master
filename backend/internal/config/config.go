@@ -6,17 +6,23 @@ import (
 
 // Config holds all configuration for the application
 type Config struct {
-	DatabaseURL string
-	Port        string
-	Environment string
+	DatabaseURL  string
+	Port         string
+	Environment  string
+	AuthUsername string
+	AuthPassword string
+	JWTSecret    string
 }
 
 // Load reads configuration from environment variables
 func Load() *Config {
 	return &Config{
-		DatabaseURL: getEnv("DATABASE_URL", ""),
-		Port:        getEnv("PORT", "8080"),
-		Environment: getEnv("NODE_ENV", "development"),
+		DatabaseURL:  getEnv("DATABASE_URL", ""),
+		Port:         getEnv("PORT", "8080"),
+		Environment:  getEnv("NODE_ENV", "development"),
+		AuthUsername: getEnv("AUTH_USERNAME", "admin"),
+		AuthPassword: getEnv("AUTH_PASSWORD", "password"),
+		JWTSecret:    getEnv("JWT_SECRET", "default_secret_key"),
 	}
 }
 

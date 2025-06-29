@@ -1,6 +1,13 @@
 # Interview Prep App
 
-A full-stack application for tracking interview preparation progress across different categories (DSA, LLD, HLD) with subcategories, status tracking, and progress analytics.
+A full-stack application for tracking interview preparation progress across different categories (DSA, LLD, HLD) with subcategories, status tracking, and progress analytics. **Now with JWT Authentication for secure API access.**
+
+## 🔐 Security Features
+
+- ✅ **JWT Authentication**: All API endpoints are protected with JWT tokens
+- ✅ **Login System**: Modern login interface with secure credential handling
+- ✅ **Token Management**: Automatic token refresh and logout functionality
+- ✅ **Protected Routes**: Frontend routes are protected and redirect to login when unauthenticated
 
 ## 🏗️ Project Structure
 
@@ -25,9 +32,12 @@ interview-prep-app/
 │   │   │   ├── services/        # Business logic layer
 │   │   │   │   ├── item_service.go
 │   │   │   │   └── stats_service.go
-│   │   │   └── handlers/        # HTTP request handlers
-│   │   │       ├── item_handler.go
-│   │   │       └── stats_handler.go
+│   │   │   ├── handlers/        # HTTP request handlers
+│   │   │   │   ├── item_handler.go
+│   │   │   │   ├── stats_handler.go
+│   │   │   │   └── auth_handler.go    # JWT authentication
+│   │   │   └── middleware/      # HTTP middleware
+│   │   │       └── auth_middleware.go # JWT validation
 │   │   ├── pkg/
 │   │   │   └── server/          # HTTP server setup
 │   │   │       └── server.go
@@ -47,9 +57,12 @@ interview-prep-app/
 │   │   ├── services/        # Business logic layer
 │   │   │   ├── item_service.go
 │   │   │   └── stats_service.go
-│   │   └── handlers/        # HTTP request handlers
-│   │       ├── item_handler.go
-│   │       └── stats_handler.go
+│   │   ├── handlers/        # HTTP request handlers
+│   │   │   ├── item_handler.go
+│   │   │   ├── stats_handler.go
+│   │   │   └── auth_handler.go    # JWT authentication
+│   │   └── middleware/      # HTTP middleware
+│   │       └── auth_middleware.go # JWT validation
 │   ├── pkg/
 │   │   └── server/          # HTTP server setup
 │   │       └── server.go
@@ -63,8 +76,14 @@ interview-prep-app/
 │   ├── public/
 │   ├── src/
 │   │   ├── components/
+│   │   │   ├── Layout.tsx
+│   │   │   └── ProtectedRoute.tsx  # Route protection
+│   │   ├── contexts/
+│   │   │   └── AuthContext.tsx     # Authentication context
 │   │   ├── pages/
+│   │   │   └── Login.tsx           # Login page
 │   │   ├── services/
+│   │   │   └── api.ts              # API client with JWT
 │   │   └── App.tsx
 │   ├── package.json
 │   └── README.md
@@ -76,6 +95,8 @@ interview-prep-app/
 
 - ✅ **Clean Architecture**: Separation of concerns with repository, service, and handler layers
 - ✅ **Scalable Structure**: Easy to add new features and maintain
+- ✅ **JWT Authentication**: Secure API access with JSON Web Tokens
+- ✅ **Protected Frontend**: Login system with automatic token management
 - ✅ **Category Management**: Support for DSA, LLD, HLD categories
 - ✅ **Subcategory Organization**: Organize items within categories by subcategories
 - ✅ **Progress Tracking**: Track completion status and statistics at category and subcategory levels
@@ -89,6 +110,7 @@ interview-prep-app/
 
 - Go 1.21 or higher
 - PostgreSQL database
+- Node.js 16+ and npm
 - Git
 
 ## 🛠️ Installation
@@ -106,11 +128,16 @@ interview-prep-app/
    cd backend
    cp env.example .env
    ```
-   Edit `.env` with your database credentials:
+   Edit `.env` with your database and authentication credentials:
    ```
    DATABASE_URL=postgresql://username:password@localhost:5432/interview_prep
    PORT=8080
    NODE_ENV=development
+   
+   # Authentication (REQUIRED)
+   AUTH_USERNAME=admin
+   AUTH_PASSWORD=secure123
+   JWT_SECRET=your_super_secret_jwt_key_here_make_it_long_and_random
    ```
 
 3. **Install Go dependencies**
@@ -130,21 +157,57 @@ interview-prep-app/
    cd ../frontend
    ```
 
-2. **Install dependencies**
+2. **Set up frontend environment variables**
+   ```bash
+   cp env.example .env
+   ```
+   Edit `.env` with your API URL:
+   ```
+   REACT_APP_API_URL=http://localhost:8080
+   ```
+
+3. **Install dependencies**
    ```bash
    npm install
    ```
 
-3. **Start the development server**
+4. **Start the development server**
    ```bash
    npm start
    ```
 
 The frontend will run on http://localhost:3000 and the backend API on http://localhost:8080.
 
+## 🔐 Authentication
+
+### Login Credentials
+Use the credentials you set in your backend `.env` file:
+- **Username**: Value of `AUTH_USERNAME` (default: `admin`)
+- **Password**: Value of `AUTH_PASSWORD` (default: `secure123`)
+
+### JWT Token Management
+- Tokens are automatically included in all API requests
+- Tokens expire after 24 hours
+- Automatic logout on token expiration
+- Tokens are stored securely in localStorage
+
+### Security Best Practices
+1. **Change default credentials** in production
+2. **Use strong JWT secret** (minimum 32 characters)
+3. **Use HTTPS** in production
+4. **Regularly rotate JWT secrets**
+
 ## 🔌 API Endpoints
 
-### API v1 (Recommended)
+### Authentication (Public)
+- `POST /api/v1/auth/login` - Login with username/password, returns JWT token
+
+### API v1 (Protected - Requires JWT Token)
+
+All API endpoints now require a valid JWT token in the Authorization header:
+```bash
+Authorization: Bearer <your-jwt-token>
+```
 
 #### Items
 - `POST /api/v1/items` - Create new item
@@ -165,21 +228,34 @@ The frontend will run on http://localhost:3000 and the backend API on http://loc
 - `GET /api/v1/stats/category/:category/subcategory/:subcategory` - Get stats for specific subcategory
 - `POST /api/v1/stats/reset-completed-all` - Reset completion counter
 
-### Legacy Endpoints (Backward Compatible)
-- `POST /items` - Create item
-- `GET /items` - List items
-- `GET /items/next` - Get next item
-- `POST /items/skip` - Skip current item
-- `PUT /items/:id/complete` - Complete item
-- `GET /stats` - Get statistics
-- `POST /reset` - Reset all items
+### Legacy Endpoints (Protected - Backward Compatible)
+All legacy endpoints are also protected and require JWT authentication.
 
 ## 📝 API Examples
 
-### Create an Item with Subcategory
+### Login to Get JWT Token
+```bash
+curl -X POST http://localhost:8080/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "admin",
+    "password": "secure123"
+  }'
+```
+
+Response:
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": "admin"
+}
+```
+
+### Create an Item (with JWT Token)
 ```bash
 curl -X POST http://localhost:8080/api/v1/items \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <your-jwt-token>" \
   -d '{
     "title": "Two Sum Problem",
     "link": "https://leetcode.com/problems/two-sum/",
@@ -188,311 +264,99 @@ curl -X POST http://localhost:8080/api/v1/items \
   }'
 ```
 
-### Get Common Subcategories for a Category
+### Get Items (with JWT Token)
 ```bash
-curl http://localhost:8080/api/v1/items/subcategories/dsa
+curl -H "Authorization: Bearer <your-jwt-token>" \
+  http://localhost:8080/api/v1/items
 ```
 
-Response:
+### Error Response for Missing/Invalid Token
 ```json
 {
-  "category": "dsa",
-  "subcategories": [
-    "arrays", "strings", "linked-lists", "trees", "graphs", 
-    "dynamic-programming", "sorting", "searching", "hashing", 
-    "stack", "queue", "heap", "recursion", "backtracking",
-    "greedy", "bit-manipulation", "math", "two-pointers",
-    "sliding-window", "divide-conquer", "other"
-  ]
+  "error": "Authorization header required"
 }
 ```
 
-### Get Next Item to Study
-```bash
-curl http://localhost:8080/api/v1/items/next
-```
-
-### Skip Current Item
-```bash
-curl -X POST http://localhost:8080/api/v1/items/skip
-```
-
-### Get Detailed Statistics with Subcategory Breakdown
-```bash
-curl http://localhost:8080/api/v1/stats/detailed
-```
-
-Response includes subcategory statistics:
 ```json
 {
-  "overall": {
-    "total_items": 100,
-    "completed_items": 75,
-    "pending_items": 25,
-    "progress_percentage": 75.0,
-    "completed_all_count": 2
-  },
-  "categories": [
-    {
-      "category": "dsa",
-      "total_items": 50,
-      "completed_items": 40,
-      "pending_items": 10,
-      "progress_percentage": 80.0,
-      "subcategories": [
-        {
-          "subcategory": "arrays",
-          "total_items": 15,
-          "completed_items": 12,
-          "pending_items": 3,
-          "progress_percentage": 80.0
-        },
-        ...
-      ]
-    },
-    ...
-  ]
+  "error": "Invalid or expired token"
 }
 ```
-
-### Filter Items by Category and Subcategory
-```bash
-curl "http://localhost:8080/api/v1/items?category=dsa&subcategory=arrays&status=pending"
-```
-
-### Get Subcategory Statistics
-```bash
-curl http://localhost:8080/api/v1/stats/category/dsa/subcategory/arrays
-```
-
-### Get Items
-```bash
-# Get all items
-curl http://localhost:8080/api/v1/items
-
-# Filter by category
-curl http://localhost:8080/api/v1/items?category=dsa
-
-# Filter by subcategory
-curl http://localhost:8080/api/v1/items?subcategory=arrays
-
-# Filter by status
-curl "http://localhost:8080/api/v1/items?status=pending"
-
-# Combine filters
-curl "http://localhost:8080/api/v1/items?category=dsa&subcategory=arrays&status=pending"
-
-# Pagination
-curl "http://localhost:8080/api/v1/items?limit=10&offset=20"
-```
-
-## 📚 Subcategories
-
-### DSA (Data Structures & Algorithms)
-- **arrays** - Array manipulation problems
-- **strings** - String processing and manipulation
-- **linked-lists** - Linked list operations
-- **trees** - Binary trees, BST, etc.
-- **graphs** - Graph algorithms
-- **dynamic-programming** - DP problems
-- **sorting** - Sorting algorithms
-- **searching** - Search algorithms
-- **hashing** - Hash table problems
-- **stack** - Stack-based problems
-- **queue** - Queue-based problems
-- **heap** - Heap/Priority queue problems
-- **recursion** - Recursive solutions
-- **backtracking** - Backtracking algorithms
-- **greedy** - Greedy algorithms
-- **bit-manipulation** - Bit operations
-- **math** - Mathematical problems
-- **two-pointers** - Two pointer technique
-- **sliding-window** - Sliding window problems
-- **divide-conquer** - Divide and conquer
-- **other** - Miscellaneous
-
-### LLD (Low Level Design)
-- **design-patterns** - Software design patterns
-- **solid-principles** - SOLID principles
-- **object-modeling** - Object-oriented modeling
-- **class-design** - Class structure design
-- **database-design** - Database schema design
-- **api-design** - API design
-- **system-components** - Component design
-- **scalability** - Scalability considerations
-- **caching** - Caching strategies
-- **other** - Miscellaneous
-
-### HLD (High Level Design)
-- **distributed-systems** - Distributed system design
-- **microservices** - Microservices architecture
-- **load-balancing** - Load balancing strategies
-- **caching** - Caching at scale
-- **databases** - Database choices and scaling
-- **messaging** - Message queues and pub/sub
-- **storage** - Storage systems
-- **cdn** - Content delivery networks
-- **monitoring** - System monitoring
-- **security** - Security considerations
-- **scalability** - Scaling strategies
-- **reliability** - Reliability patterns
-- **other** - Miscellaneous
-
-## 🏗️ Architecture Benefits
-
-### 1. **Repository Pattern**
-- Isolates database logic
-- Easy to mock for testing
-- Can switch databases without changing business logic
-
-### 2. **Service Layer**
-- Contains all business logic
-- Validates inputs
-- Orchestrates complex operations
-
-### 3. **Handler Layer**
-- Handles HTTP-specific concerns
-- Request/response transformation
-- Error formatting
-
-### 4. **Configuration Management**
-- Centralized configuration
-- Environment-based settings
-- Type-safe config struct
 
 ## 🚀 Deployment
 
-### Using Docker (Full Stack)
+### Environment Variables for Production
 
-#### Quick Start with Docker Compose
+#### Backend (.env)
 ```bash
-# Clone the repository
-git clone <your-repo-url>
-cd interview-prep-app
+DATABASE_URL=postgresql://user:pass@host:5432/dbname
+PORT=8080
+NODE_ENV=production
 
-# Copy environment variables
-cp env.example .env
-
-# Start everything (database, backend, frontend)
-make dev    # For development with hot reload
-# OR
-make prod   # For production build
+# Authentication - CHANGE THESE IN PRODUCTION!
+AUTH_USERNAME=your_secure_username
+AUTH_PASSWORD=your_very_secure_password
+JWT_SECRET=your_super_long_random_jwt_secret_key_at_least_32_characters
 ```
 
-#### Docker Commands
+#### Frontend (.env)
 ```bash
-# Start services
-make up          # Start in background
-make dev         # Start with hot reload
-make prod        # Start production build
-
-# Stop services
-make down        # Stop all containers
-
-# View logs
-make logs        # View all logs
-docker-compose logs backend  # Backend logs only
-docker-compose logs frontend # Frontend logs only
-
-# Access containers
-make db-shell       # PostgreSQL shell
-make backend-shell  # Backend container shell
-make frontend-shell # Frontend container shell
-
-# Clean up
-make clean       # Remove all containers and volumes
+REACT_APP_API_URL=https://your-api-domain.com
 ```
 
-#### Manual Docker Commands
-```bash
-# Development with hot reload
-docker-compose -f docker-compose.dev.yml up
+### Security Considerations for Production
 
-# Production build
-docker-compose up
+1. **Use strong, unique credentials**
+2. **Use a long, random JWT secret (32+ characters)**
+3. **Enable HTTPS/TLS**
+4. **Set secure CORS policies**
+5. **Use environment variables, never hardcode secrets**
+6. **Consider shorter JWT expiration times**
+7. **Implement refresh token mechanism for longer sessions**
 
-# Build specific service
-docker-compose build backend
-docker-compose build frontend
-```
+## 🔄 Future Security Enhancements
 
-### Deployment Platforms
+The current JWT implementation provides a solid foundation and can be extended with:
 
-#### Railway (Recommended)
-1. Push to GitHub
-2. Connect Railway to repository
-3. Add PostgreSQL database
-4. Set environment variables
-5. Deploy
+1. **Refresh Tokens**
+   - Longer-lived refresh tokens
+   - Automatic token refresh
 
-#### Render
-1. Create new Web Service
-2. Connect GitHub repository
-3. Add PostgreSQL database
-4. Configure environment variables
-5. Deploy
+2. **Role-Based Access Control (RBAC)**
+   - Multiple user roles
+   - Permission-based access
 
-#### Fly.io
-1. Install flyctl
-2. Run `fly launch`
-3. Add PostgreSQL: `fly postgres create`
-4. Deploy: `fly deploy`
+3. **Rate Limiting**
+   - Login attempt limiting
+   - API rate limiting per user
 
-## 🔄 Future Enhancements
+4. **Session Management**
+   - Active session tracking
+   - Remote logout capability
 
-The current architecture makes it easy to add:
+5. **Two-Factor Authentication (2FA)**
+   - TOTP support
+   - SMS/Email verification
 
-1. **Authentication & Authorization**
-   - Add middleware in `pkg/server`
-   - Create auth service in `internal/services`
+6. **OAuth Integration**
+   - Google/GitHub login
+   - Social authentication
 
-2. **Caching Layer**
-   - Add Redis repository
-   - Implement caching in service layer
+## 🧪 Testing Authentication
 
-3. **API Rate Limiting**
-   - Add rate limit middleware
-   - Configure per-endpoint limits
+### Manual Testing
+1. Start the application
+2. Try accessing any API endpoint without token (should fail)
+3. Login with correct credentials
+4. Use returned token for API calls
+5. Try with invalid token (should fail)
 
-4. **Webhooks & Notifications**
-   - Add notification service
-   - Implement webhook handlers
-
-5. **Import/Export Features**
-   - Add CSV/JSON import handlers
-   - Implement bulk operations
-
-6. **Tags & Advanced Filtering**
-   - Extend item model with tags
-   - Add tag-based filtering
-
-7. **Study Sessions**
-   - Track study time per item
-   - Implement spaced repetition
-
-## 🧪 Testing
-
-The architecture supports easy testing:
-
-```go
-// Example unit test for service
-func TestItemService_CreateItem(t *testing.T) {
-    // Mock repository
-    mockRepo := &MockItemRepository{}
-    service := services.NewItemService(mockRepo, nil)
-    
-    // Test logic
-    item, err := service.CreateItem(&models.CreateItemRequest{
-        Title:       "Test Item",
-        Link:        "https://example.com",
-        Category:    models.CategoryDSA,
-        Subcategory: "arrays",
-    })
-    
-    assert.NoError(t, err)
-    assert.NotNil(t, item)
-}
-```
+### Frontend Testing
+1. Open http://localhost:3000
+2. Should redirect to login page
+3. Login with configured credentials
+4. Should access the dashboard
+5. Logout should redirect back to login
 
 ## 📚 Development Guidelines
 

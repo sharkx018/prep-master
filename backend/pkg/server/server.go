@@ -3,6 +3,7 @@ package server
 import (
 	"interview-prep-app/internal/config"
 	"interview-prep-app/internal/handlers"
+	"interview-prep-app/internal/middleware"
 
 	"github.com/gin-gonic/gin"
 )
@@ -13,6 +14,7 @@ type Server struct {
 	router       *gin.Engine
 	itemHandler  *handlers.ItemHandler
 	statsHandler *handlers.StatsHandler
+	authHandler  *handlers.AuthHandler
 }
 
 // New creates a new server instance
@@ -24,11 +26,15 @@ func New(cfg *config.Config, itemHandler *handlers.ItemHandler, statsHandler *ha
 
 	router := gin.Default()
 
+	// Create auth handler
+	authHandler := handlers.NewAuthHandler(cfg)
+
 	return &Server{
 		config:       cfg,
 		router:       router,
 		itemHandler:  itemHandler,
 		statsHandler: statsHandler,
+		authHandler:  authHandler,
 	}
 }
 
@@ -59,11 +65,18 @@ func (s *Server) setupMiddleware() {
 
 // setupRoutes configures all routes for the server
 func (s *Server) setupRoutes() {
-	// Health check
+	// Health check (public)
 	s.router.GET("/health", s.healthCheck)
 
-	// API v1 routes
+	// Authentication routes (public)
+	auth := s.router.Group("/api/v1/auth")
+	{
+		auth.POST("/login", s.authHandler.Login)
+	}
+
+	// Protected API v1 routes
 	v1 := s.router.Group("/api/v1")
+	v1.Use(middleware.AuthMiddleware(s.authHandler)) // Apply JWT middleware to all v1 routes
 	{
 		// Item routes
 		items := v1.Group("/items")
@@ -93,14 +106,18 @@ func (s *Server) setupRoutes() {
 		}
 	}
 
-	// Legacy routes (for backward compatibility)
-	s.router.POST("/items", s.itemHandler.CreateItem)
-	s.router.GET("/items", s.itemHandler.GetItems)
-	s.router.GET("/items/next", s.itemHandler.GetNextItem)
-	s.router.POST("/items/skip", s.itemHandler.SkipItem)
-	s.router.PUT("/items/:id/complete", s.itemHandler.CompleteItem)
-	s.router.GET("/stats", s.statsHandler.GetStats)
-	s.router.POST("/reset", s.itemHandler.ResetItems)
+	// Legacy routes (for backward compatibility) - also protected
+	legacyProtected := s.router.Group("")
+	legacyProtected.Use(middleware.AuthMiddleware(s.authHandler))
+	{
+		legacyProtected.POST("/items", s.itemHandler.CreateItem)
+		legacyProtected.GET("/items", s.itemHandler.GetItems)
+		legacyProtected.GET("/items/next", s.itemHandler.GetNextItem)
+		legacyProtected.POST("/items/skip", s.itemHandler.SkipItem)
+		legacyProtected.PUT("/items/:id/complete", s.itemHandler.CompleteItem)
+		legacyProtected.GET("/stats", s.statsHandler.GetStats)
+		legacyProtected.POST("/reset", s.itemHandler.ResetItems)
+	}
 }
 
 // Start starts the HTTP server

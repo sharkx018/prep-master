@@ -16,7 +16,7 @@ import (
 func main() {
 	// Load environment variables
 	if err := godotenv.Load(); err != nil {
-		log.Println("No .env file found, using system environment variables")
+		log.Println("=====>>>>>>>>No .env file found, using system environment variables")
 	}
 
 	// Load configuration
@@ -50,6 +50,7 @@ func main() {
 	srv := server.New(cfg, itemHandler, statsHandler)
 
 	log.Printf("Server starting on port %s", cfg.Port)
+	log.Printf("Server starting on port %s", cfg)
 	if err := srv.Start(); err != nil {
 		log.Fatal("Failed to start server:", err)
 	}

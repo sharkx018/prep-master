@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import { 
   LayoutDashboard, 
   List, 
@@ -10,7 +11,9 @@ import {
   Sparkles,
   Github,
   Linkedin,
-  Code2
+  Code2,
+  LogOut,
+  User
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -19,6 +22,7 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const location = useLocation();
+  const { user, logout } = useAuth();
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -29,6 +33,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   ];
 
   const isActive = (path: string) => location.pathname === path;
+
+  const handleLogout = () => {
+    logout();
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col">
@@ -66,8 +74,23 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               </a>
               <div className="flex items-center text-white bg-white/20 px-3 py-1 rounded-full">
                 <Code2 className="h-4 w-4 mr-1" />
-                <span className="text-sm font-medium">v1.0</span>
+                <span className="text-sm font-medium">v2.0</span>
               </div>
+              {user && (
+                <div className="flex items-center space-x-2 text-white">
+                  <div className="flex items-center bg-white/20 px-3 py-1 rounded-full">
+                    <User className="h-4 w-4 mr-2" />
+                    <span className="text-sm font-medium">{user.username}</span>
+                  </div>
+                  <button
+                    onClick={handleLogout}
+                    className="p-2 text-white/80 hover:text-white hover:bg-white/20 rounded-full transition-colors"
+                    title="Logout"
+                  >
+                    <LogOut className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -105,7 +128,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           <div className="flex-shrink-0 p-4 border-t border-gray-100">
             <div className="p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg">
               <p className="text-xs text-gray-600 text-center">
-                <span className="font-semibold text-indigo-600">vrma018_</span>
+                <span className="font-semibold text-indigo-600">Secured with JWT</span>
               </p>
             </div>
           </div>
