@@ -83,6 +83,7 @@ func (s *Server) setupRoutes() {
 		{
 			items.POST("", s.itemHandler.CreateItem)
 			items.GET("", s.itemHandler.GetItems)
+			items.GET("/paginated", s.itemHandler.GetItemsPaginated)
 			items.GET("/next", s.itemHandler.GetNextItem)
 			items.POST("/skip", s.itemHandler.SkipItem)
 			items.GET("/subcategories/:category", s.itemHandler.GetSubcategories)

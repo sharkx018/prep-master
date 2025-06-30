@@ -73,6 +73,70 @@ func (s *ItemService) GetItems(filter *models.ItemFilter) ([]*models.Item, error
 	return s.itemRepo.GetAll(filter)
 }
 
+// GetItemsPaginated retrieves items with filtering, validation and pagination metadata
+func (s *ItemService) GetItemsPaginated(filter *models.ItemFilter) (*models.PaginatedItemsResponse, error) {
+	// Validate filter parameters
+	if filter.Category != nil && !models.IsValidCategory(*filter.Category) {
+		return nil, fmt.Errorf("invalid category: %s", *filter.Category)
+	}
+
+	if filter.Status != nil && !models.IsValidStatus(*filter.Status) {
+		return nil, fmt.Errorf("invalid status: %s", *filter.Status)
+	}
+
+	if filter.Limit != nil && *filter.Limit < 0 {
+		return nil, fmt.Errorf("limit cannot be negative")
+	}
+
+	if filter.Offset != nil && *filter.Offset < 0 {
+		return nil, fmt.Errorf("offset cannot be negative")
+	}
+
+	// Set default limit if not provided
+	limit := 10
+	if filter.Limit != nil {
+		limit = *filter.Limit
+	}
+
+	offset := 0
+	if filter.Offset != nil {
+		offset = *filter.Offset
+	}
+
+	// Get total count
+	totalCount, err := s.itemRepo.GetTotalCount(filter)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get total count: %w", err)
+	}
+
+	// Get items
+	items, err := s.itemRepo.GetAll(filter)
+	if err != nil {
+		return nil, err
+	}
+
+	// Calculate pagination metadata
+	totalPages := (totalCount + limit - 1) / limit // Ceiling division
+	page := (offset / limit) + 1
+	hasNext := offset+limit < totalCount
+	hasPrev := offset > 0
+
+	pagination := models.PaginationMeta{
+		Total:      totalCount,
+		Limit:      limit,
+		Offset:     offset,
+		HasNext:    hasNext,
+		HasPrev:    hasPrev,
+		TotalPages: totalPages,
+		Page:       page,
+	}
+
+	return &models.PaginatedItemsResponse{
+		Items:      items,
+		Pagination: pagination,
+	}, nil
+}
+
 // GetNextItem retrieves the current in-progress item or a random pending item
 func (s *ItemService) GetNextItem() (*models.Item, error) {
 	// First check if there's already an in-progress item

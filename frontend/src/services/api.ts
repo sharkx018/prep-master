@@ -98,6 +98,21 @@ export interface DetailedStats {
   categories: CategoryStats[];
 }
 
+export interface PaginationMeta {
+  total: number;
+  limit: number;
+  offset: number;
+  has_next: boolean;
+  has_prev: boolean;
+  total_pages: number;
+  page: number;
+}
+
+export interface PaginatedItemsResponse {
+  items: Item[];
+  pagination: PaginationMeta;
+}
+
 // API calls
 export const itemsApi = {
   // Get all items with optional filters
@@ -117,6 +132,26 @@ export const itemsApi = {
       });
     }
     const response = await api.get<Item[]>(`/items?${params.toString()}`);
+    return response.data;
+  },
+
+  // Get paginated items with optional filters
+  getItemsPaginated: async (filters?: {
+    category?: string;
+    subcategory?: string;
+    status?: string;
+    limit?: number;
+    offset?: number;
+  }) => {
+    const params = new URLSearchParams();
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined) {
+          params.append(key, value.toString());
+        }
+      });
+    }
+    const response = await api.get<PaginatedItemsResponse>(`/items/paginated?${params.toString()}`);
     return response.data;
   },
 

@@ -105,6 +105,52 @@ func (h *ItemHandler) GetItems(c *gin.Context) {
 	c.JSON(http.StatusOK, items)
 }
 
+// GetItemsPaginated handles GET /items/paginated
+func (h *ItemHandler) GetItemsPaginated(c *gin.Context) {
+	filter := &models.ItemFilter{}
+
+	// Parse query parameters
+	if categoryStr := c.Query("category"); categoryStr != "" {
+		category := models.Category(categoryStr)
+		filter.Category = &category
+	}
+
+	if subcategory := c.Query("subcategory"); subcategory != "" {
+		filter.Subcategory = &subcategory
+	}
+
+	if statusStr := c.Query("status"); statusStr != "" {
+		status := models.Status(statusStr)
+		filter.Status = &status
+	}
+
+	if limitStr := c.Query("limit"); limitStr != "" {
+		limit, err := strconv.Atoi(limitStr)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid limit parameter"})
+			return
+		}
+		filter.Limit = &limit
+	}
+
+	if offsetStr := c.Query("offset"); offsetStr != "" {
+		offset, err := strconv.Atoi(offsetStr)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid offset parameter"})
+			return
+		}
+		filter.Offset = &offset
+	}
+
+	result, err := h.itemService.GetItemsPaginated(filter)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, result)
+}
+
 // GetNextItem handles GET /items/next
 func (h *ItemHandler) GetNextItem(c *gin.Context) {
 	item, err := h.itemService.GetNextItem()

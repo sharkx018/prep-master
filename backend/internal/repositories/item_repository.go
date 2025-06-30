@@ -516,3 +516,36 @@ func (r *ItemRepository) UpdateStatus(id int, status models.Status) (*models.Ite
 
 	return &item, nil
 }
+
+// GetTotalCount returns the total count of items matching the given filters
+func (r *ItemRepository) GetTotalCount(filter *models.ItemFilter) (int, error) {
+	query := "SELECT COUNT(*) FROM items WHERE 1=1"
+	args := []interface{}{}
+	argCount := 0
+
+	// Build dynamic query based on filters (same logic as GetAll)
+	if filter.Category != nil {
+		argCount++
+		query += fmt.Sprintf(" AND category = $%d", argCount)
+		args = append(args, *filter.Category)
+	}
+
+	if filter.Subcategory != nil {
+		argCount++
+		query += fmt.Sprintf(" AND subcategory = $%d", argCount)
+		args = append(args, *filter.Subcategory)
+	}
+
+	if filter.Status != nil {
+		argCount++
+		query += fmt.Sprintf(" AND status = $%d", argCount)
+		args = append(args, *filter.Status)
+	}
+
+	var count int
+	err := r.db.QueryRow(query, args...).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count items: %w", err)
+	}
+	return count, nil
+}

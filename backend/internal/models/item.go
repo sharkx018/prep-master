@@ -92,6 +92,23 @@ type ItemFilter struct {
 	Offset      *int      `json:"offset,omitempty"`
 }
 
+// PaginatedItemsResponse represents a paginated response for items
+type PaginatedItemsResponse struct {
+	Items      []*Item        `json:"items"`
+	Pagination PaginationMeta `json:"pagination"`
+}
+
+// PaginationMeta contains pagination metadata
+type PaginationMeta struct {
+	Total      int  `json:"total"`
+	Limit      int  `json:"limit"`
+	Offset     int  `json:"offset"`
+	HasNext    bool `json:"has_next"`
+	HasPrev    bool `json:"has_prev"`
+	TotalPages int  `json:"total_pages"`
+	Page       int  `json:"page"`
+}
+
 // ValidCategories returns a slice of all valid categories
 func ValidCategories() []Category {
 	return []Category{CategoryDSA, CategoryLLD, CategoryHLD}

@@ -10,12 +10,23 @@ import {
   Edit2,
   Save,
   X,
-  Plus
+  Plus,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
-import { itemsApi, Item, UpdateItemRequest } from '../services/api';
+import { itemsApi, Item, UpdateItemRequest, PaginatedItemsResponse, PaginationMeta } from '../services/api';
 
 const Items: React.FC = () => {
   const [items, setItems] = useState<Item[]>([]);
+  const [pagination, setPagination] = useState<PaginationMeta>({
+    total: 0,
+    limit: 10,
+    offset: 0,
+    has_next: false,
+    has_prev: false,
+    total_pages: 0,
+    page: 1
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<number | null>(null);
@@ -36,18 +47,75 @@ const Items: React.FC = () => {
   const [categoryFilter, setCategoryFilter] = useState<string>('');
   const [subcategoryFilter, setSubcategoryFilter] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
+  const [subcategories, setSubcategories] = useState<string[]>([]);
+  const [editSubcategories, setEditSubcategories] = useState<string[]>([]);
+  
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  // Fetch subcategories for filter dropdown
+  useEffect(() => {
+    const fetchSubcategoriesForFilter = async () => {
+      if (categoryFilter) {
+        try {
+          const response = await itemsApi.getSubcategories(categoryFilter);
+          const subs = response?.subcategories && Array.isArray(response.subcategories) 
+            ? response.subcategories 
+            : [];
+          setSubcategories(subs);
+          // Reset subcategory filter when category filter changes
+          setSubcategoryFilter('');
+        } catch (err) {
+          console.error('Failed to fetch subcategories for filter', err);
+          setSubcategories([]);
+        }
+      } else {
+        setSubcategories([]);
+        setSubcategoryFilter('');
+      }
+    };
+
+    fetchSubcategoriesForFilter();
+  }, [categoryFilter]);
+
+  // Fetch subcategories for edit form
+  useEffect(() => {
+    const fetchSubcategoriesForEdit = async () => {
+      if (editForm.category) {
+        try {
+          const response = await itemsApi.getSubcategories(editForm.category);
+          const subs = response?.subcategories && Array.isArray(response.subcategories) 
+            ? response.subcategories 
+            : [];
+          setEditSubcategories(subs);
+        } catch (err) {
+          console.error('Failed to fetch subcategories for edit', err);
+          setEditSubcategories([]);
+        }
+      }
+    };
+
+    if (editingId) {
+      fetchSubcategoriesForEdit();
+    }
+  }, [editForm.category, editingId]);
 
   useEffect(() => {
     const loadItems = async () => {
       try {
         setLoading(true);
-        const filters: any = {};
+        const filters: any = {
+          limit: itemsPerPage,
+          offset: (currentPage - 1) * itemsPerPage
+        };
         if (categoryFilter) filters.category = categoryFilter;
         if (subcategoryFilter) filters.subcategory = subcategoryFilter;
         if (statusFilter) filters.status = statusFilter;
         
-        const data = await itemsApi.getItems(filters);
-        setItems(Array.isArray(data) ? data : []);
+        const data = await itemsApi.getItemsPaginated(filters);
+        setItems(data.items || []);
+        setPagination(data.pagination);
       } catch (err) {
         setError('Failed to fetch items');
         console.error(err);
@@ -58,18 +126,22 @@ const Items: React.FC = () => {
     };
     
     loadItems();
-  }, [categoryFilter, subcategoryFilter, statusFilter]);
+  }, [categoryFilter, subcategoryFilter, statusFilter, currentPage, itemsPerPage]);
 
   const fetchItems = async () => {
     try {
       setLoading(true);
-      const filters: any = {};
+      const filters: any = {
+        limit: itemsPerPage,
+        offset: (currentPage - 1) * itemsPerPage
+      };
       if (categoryFilter) filters.category = categoryFilter;
       if (subcategoryFilter) filters.subcategory = subcategoryFilter;
       if (statusFilter) filters.status = statusFilter;
       
-      const data = await itemsApi.getItems(filters);
-      setItems(Array.isArray(data) ? data : []);
+      const data = await itemsApi.getItemsPaginated(filters);
+      setItems(data.items || []);
+      setPagination(data.pagination);
     } catch (err) {
       setError('Failed to fetch items');
       console.error(err);
@@ -77,6 +149,20 @@ const Items: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [categoryFilter, subcategoryFilter, statusFilter]);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handleItemsPerPageChange = (newItemsPerPage: number) => {
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1); // Reset to first page when changing items per page
   };
 
   const handleDelete = async (id: number) => {
@@ -187,6 +273,14 @@ const Items: React.FC = () => {
     });
   };
 
+  const handleEditCategoryChange = (category: string) => {
+    setEditForm(prev => ({
+      ...prev,
+      category: category as 'dsa' | 'lld' | 'hld',
+      subcategory: '' // Reset subcategory when category changes
+    }));
+  };
+
   const getCategoryColor = (category: string) => {
     switch (category) {
       case 'dsa':
@@ -284,14 +378,21 @@ const Items: React.FC = () => {
             <label htmlFor="subcategory" className="block text-sm font-medium text-gray-700 mb-1">
               Subcategory
             </label>
-            <input
-              type="text"
+            <select
               id="subcategory"
               value={subcategoryFilter}
               onChange={(e) => setSubcategoryFilter(e.target.value)}
-              placeholder="e.g., arrays"
               className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-            />
+            >
+              <option value="">All Subcategories</option>
+              {subcategories.map((subcategory) => (
+                <option key={subcategory} value={subcategory}>
+                  {subcategory.split('-').map(word => 
+                    word.charAt(0).toUpperCase() + word.slice(1)
+                  ).join(' ')}
+                </option>
+              ))}
+            </select>
           </div>
           
           <div>
@@ -358,7 +459,9 @@ const Items: React.FC = () => {
                         <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
                         <select
                           value={editForm.category}
-                          onChange={(e) => setEditForm({ ...editForm, category: e.target.value as 'dsa' | 'lld' | 'hld' })}
+                          onChange={(e) => {
+                            handleEditCategoryChange(e.target.value);
+                          }}
                           className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                         >
                           <option value="dsa">Data Structures & Algorithms</option>
@@ -368,12 +471,20 @@ const Items: React.FC = () => {
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Subcategory</label>
-                        <input
-                          type="text"
+                        <select
                           value={editForm.subcategory}
                           onChange={(e) => setEditForm({ ...editForm, subcategory: e.target.value })}
                           className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                        />
+                        >
+                          <option value="">Select a subcategory</option>
+                          {editSubcategories.map((subcategory) => (
+                            <option key={subcategory} value={subcategory}>
+                              {subcategory.split('-').map(word => 
+                                word.charAt(0).toUpperCase() + word.slice(1)
+                              ).join(' ')}
+                            </option>
+                          ))}
+                        </select>
                       </div>
                     </div>
 
@@ -564,6 +675,126 @@ const Items: React.FC = () => {
               </li>
             ))}
           </ul>
+        </div>
+      )}
+
+      {/* Pagination Info and Controls */}
+      {!loading && pagination.total > 0 && (
+        <div className="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <p className="text-sm text-gray-700">
+                Showing{' '}
+                <span className="font-medium">
+                  {pagination.offset + 1}
+                </span>{' '}
+                to{' '}
+                <span className="font-medium">
+                  {Math.min(pagination.offset + pagination.limit, pagination.total)}
+                </span>{' '}
+                of{' '}
+                <span className="font-medium">{pagination.total}</span>{' '}
+                results
+              </p>
+              <div className="ml-4 flex items-center">
+                <label htmlFor="items-per-page" className="mr-2 text-sm text-gray-700">
+                  Items per page:
+                </label>
+                <select
+                  id="items-per-page"
+                  value={itemsPerPage}
+                  onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
+                  className="rounded-md border-gray-300 text-sm focus:border-indigo-500 focus:ring-indigo-500"
+                >
+                  <option value={5}>5</option>
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={!pagination.has_prev}
+                className="relative inline-flex items-center px-2 py-2 rounded-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </button>
+
+              {/* Page numbers */}
+              <div className="flex items-center space-x-1">
+                {/* First page */}
+                {currentPage > 3 && (
+                  <>
+                    <button
+                      onClick={() => handlePageChange(1)}
+                      className="relative inline-flex items-center px-3 py-2 rounded-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    >
+                      1
+                    </button>
+                    {currentPage > 4 && (
+                      <span className="text-gray-500">...</span>
+                    )}
+                  </>
+                )}
+
+                {/* Current page and neighbors */}
+                {Array.from({ length: Math.min(5, pagination.total_pages) }, (_, i) => {
+                  let pageNum: number;
+                  if (pagination.total_pages <= 5) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= pagination.total_pages - 2) {
+                    pageNum = pagination.total_pages - 4 + i;
+                  } else {
+                    pageNum = currentPage - 2 + i;
+                  }
+
+                  if (pageNum < 1 || pageNum > pagination.total_pages) return null;
+
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => handlePageChange(pageNum)}
+                      className={`relative inline-flex items-center px-3 py-2 rounded-md border text-sm font-medium ${
+                        pageNum === currentPage
+                          ? 'border-indigo-500 bg-indigo-50 text-indigo-600'
+                          : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+
+                {/* Last page */}
+                {currentPage < pagination.total_pages - 2 && pagination.total_pages > 5 && (
+                  <>
+                    {currentPage < pagination.total_pages - 3 && (
+                      <span className="text-gray-500">...</span>
+                    )}
+                    <button
+                      onClick={() => handlePageChange(pagination.total_pages)}
+                      className="relative inline-flex items-center px-3 py-2 rounded-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    >
+                      {pagination.total_pages}
+                    </button>
+                  </>
+                )}
+              </div>
+
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={!pagination.has_next}
+                className="relative inline-flex items-center px-2 py-2 rounded-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ChevronRight className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
