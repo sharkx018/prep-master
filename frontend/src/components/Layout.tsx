@@ -127,9 +127,20 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           </div>
           <div className="flex-shrink-0 p-6">
             <div className="flex items-center justify-center">
-              <div className="px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg">
-                <span className="text-lg font-mono font-medium text-gray-800 tracking-widest">vrma018_</span>
-              </div>
+              <a 
+                href="https://www.instagram.com/vrma018_/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="group relative px-4 py-3 bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-xl hover:from-purple-100 hover:to-pink-100 hover:border-purple-300 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5"
+              >
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full group-hover:animate-pulse"></div>
+                  <span className="text-lg font-mono font-semibold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent tracking-wider">
+                    @vrma018_
+                  </span>
+                </div>
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-400/10 to-pink-400/10 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              </a>
             </div>
           </div>
         </nav>
