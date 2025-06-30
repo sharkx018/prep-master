@@ -128,7 +128,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           <div className="flex-shrink-0 p-4 border-t border-gray-100">
             <div className="p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg">
               <p className="text-xs text-gray-600 text-center">
-                <span className="font-semibold text-indigo-600">Secured with JWT</span>
+                <span className="font-semibold text-indigo-600">Your data is protected with industry-standard encryption</span>
               </p>
             </div>
           </div>
