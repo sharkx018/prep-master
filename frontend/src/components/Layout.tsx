@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { 
   LayoutDashboard, 
   List, 
@@ -13,7 +14,9 @@ import {
   Linkedin,
   Code2,
   LogOut,
-  User
+  User,
+  Moon,
+  Sun
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -23,6 +26,7 @@ interface LayoutProps {
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const location = useLocation();
   const { user, logout } = useAuth();
+  const { isDarkMode, toggleTheme } = useTheme();
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -39,7 +43,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col">
+    <div className={`min-h-screen flex flex-col transition-colors duration-300 ${
+      isDarkMode 
+        ? 'bg-gradient-to-br from-gray-900 to-gray-800' 
+        : 'bg-gradient-to-br from-gray-50 to-gray-100'
+    }`}>
       {/* Header */}
       <header className="bg-gradient-to-r from-indigo-600 to-purple-600 shadow-lg flex-shrink-0 fixed top-0 left-0 right-0 z-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -72,6 +80,13 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               >
                 <Linkedin className="h-5 w-5" />
               </a>
+              <button
+                onClick={toggleTheme}
+                className="p-2 text-white/80 hover:text-white hover:bg-white/20 rounded-full transition-all duration-300 hover:scale-110"
+                title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+              >
+                {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+              </button>
               <div className="flex items-center text-white bg-white/20 px-3 py-1 rounded-full">
                 <Code2 className="h-4 w-4 mr-1" />
                 <span className="text-sm font-medium">v2.0</span>
@@ -98,11 +113,23 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
       <div className="flex flex-1 relative">
         {/* Sidebar */}
-        <nav className="w-64 bg-white shadow-lg border-r border-gray-100 flex flex-col fixed top-16 bottom-0 left-0 z-10">
+        <nav className={`w-64 shadow-lg border-r flex flex-col fixed top-16 bottom-0 left-0 z-10 transition-colors duration-300 ${
+          isDarkMode 
+            ? 'bg-gray-800 border-gray-700' 
+            : 'bg-white border-gray-100'
+        }`}>
           <div className="flex-1 p-4 overflow-y-auto">
-            <div className="mb-6 p-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg border border-indigo-100">
-              <h3 className="text-sm font-semibold text-indigo-900 mb-1">Welcome back!</h3>
-              <p className="text-xs text-indigo-700">Keep crushing 🚀</p>
+            <div className={`mb-6 p-4 rounded-lg border transition-colors duration-300 ${
+              isDarkMode 
+                ? 'bg-gradient-to-r from-indigo-900/50 to-purple-900/50 border-indigo-800' 
+                : 'bg-gradient-to-r from-indigo-50 to-purple-50 border-indigo-100'
+            }`}>
+              <h3 className={`text-sm font-semibold mb-1 transition-colors duration-300 ${
+                isDarkMode ? 'text-indigo-300' : 'text-indigo-900'
+              }`}>Welcome back!</h3>
+              <p className={`text-xs transition-colors duration-300 ${
+                isDarkMode ? 'text-indigo-400' : 'text-indigo-700'
+              }`}>Keep crushing 🚀</p>
             </div>
             <ul className="space-y-1">
               {navigation.map((item) => {
@@ -114,10 +141,18 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                       className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 ${
                         isActive(item.href)
                           ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-md transform scale-105'
-                          : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900 hover:translate-x-1'
+                          : isDarkMode
+                            ? 'text-gray-300 hover:bg-gray-700 hover:text-white hover:translate-x-1'
+                            : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900 hover:translate-x-1'
                       }`}
                     >
-                      <Icon className={`mr-3 h-5 w-5 ${isActive(item.href) ? 'text-white' : ''}`} />
+                      <Icon className={`mr-3 h-5 w-5 ${
+                        isActive(item.href) 
+                          ? 'text-white' 
+                          : isDarkMode 
+                            ? 'text-gray-400' 
+                            : 'text-gray-600'
+                      }`} />
                       {item.name}
                     </Link>
                   </li>
@@ -131,7 +166,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 href="https://www.instagram.com/vrma018_/" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="group relative px-4 py-3 bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-xl hover:from-purple-100 hover:to-pink-100 hover:border-purple-300 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5"
+                className={`group relative px-4 py-3 border rounded-xl transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 ${
+                  isDarkMode
+                    ? 'bg-gradient-to-r from-purple-900/30 to-pink-900/30 border-purple-700 hover:from-purple-900/50 hover:to-pink-900/50 hover:border-purple-600'
+                    : 'bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200 hover:from-purple-100 hover:to-pink-100 hover:border-purple-300'
+                }`}
               >
                 <div className="flex items-center space-x-2">
                   <div className="w-2 h-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full group-hover:animate-pulse"></div>
@@ -139,7 +178,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     @vrma018_
                   </span>
                 </div>
-                <div className="absolute inset-0 bg-gradient-to-r from-purple-400/10 to-pink-400/10 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className={`absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${
+                  isDarkMode
+                    ? 'bg-gradient-to-r from-purple-400/20 to-pink-400/20'
+                    : 'bg-gradient-to-r from-purple-400/10 to-pink-400/10'
+                }`}></div>
               </a>
             </div>
           </div>

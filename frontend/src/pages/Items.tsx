@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTheme } from '../contexts/ThemeContext';
 import { 
   ExternalLink, 
   CheckCircle, 
@@ -17,6 +18,7 @@ import {
 import { itemsApi, Item, UpdateItemRequest, PaginatedItemsResponse, PaginationMeta } from '../services/api';
 
 const Items: React.FC = () => {
+  const { isDarkMode } = useTheme();
   const [items, setItems] = useState<Item[]>([]);
   const [pagination, setPagination] = useState<PaginationMeta>({
     total: 0,
@@ -344,28 +346,30 @@ const Items: React.FC = () => {
   return (
     <div>
       <div className="mb-8">
-        <h2 className="text-2xl font-bold text-gray-900">All Items</h2>
-        <p className="mt-1 text-sm text-gray-600">
+        <h2 className={`text-2xl font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>All Items</h2>
+        <p className={`mt-1 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
           Browse and manage your interview prep items
         </p>
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-lg shadow p-4 mb-6">
+      <div className={`rounded-lg shadow p-4 mb-6 ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
         <div className="flex items-center mb-4">
           <Filter className="h-5 w-5 text-gray-400 mr-2" />
-          <h3 className="text-sm font-medium text-gray-900">Filters</h3>
+          <h3 className={`text-sm font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Filters</h3>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="category" className={`block text-sm font-medium mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
               Category
             </label>
             <select
               id="category"
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
-              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              className={`block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${
+                isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-900'
+              }`}
             >
               <option value="">All Categories</option>
               <option value="dsa">Data Structures & Algorithms</option>
@@ -375,14 +379,16 @@ const Items: React.FC = () => {
           </div>
           
           <div>
-            <label htmlFor="subcategory" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="subcategory" className={`block text-sm font-medium mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
               Subcategory
             </label>
             <select
               id="subcategory"
               value={subcategoryFilter}
               onChange={(e) => setSubcategoryFilter(e.target.value)}
-              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              className={`block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${
+                isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-900'
+              }`}
             >
               <option value="">All Subcategories</option>
               {subcategories.map((subcategory) => (
@@ -396,14 +402,16 @@ const Items: React.FC = () => {
           </div>
           
           <div>
-            <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="status" className={`block text-sm font-medium mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
               Status
             </label>
             <select
               id="status"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              className={`block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${
+                isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-900'
+              }`}
             >
               <option value="">All Statuses</option>
               <option value="pending">Pending</option>
@@ -415,7 +423,11 @@ const Items: React.FC = () => {
       </div>
 
       {error && (
-        <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+        <div className={`mb-6 border px-4 py-3 rounded-lg ${
+          isDarkMode 
+            ? 'bg-red-900/20 border-red-800 text-red-300' 
+            : 'bg-red-50 border-red-200 text-red-700'
+        }`}>
           {error}
         </div>
       )}
@@ -425,25 +437,29 @@ const Items: React.FC = () => {
           <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
         </div>
       ) : !Array.isArray(items) || items.length === 0 ? (
-        <div className="bg-white rounded-lg shadow p-8 text-center">
-          <p className="text-gray-600">No items found. Try adjusting your filters or add new items.</p>
+        <div className={`rounded-lg shadow p-8 text-center ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+          <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>No items found. Try adjusting your filters or add new items.</p>
         </div>
       ) : (
-        <div className="bg-white shadow overflow-hidden rounded-lg">
-          <ul className="divide-y divide-gray-200">
+        <div className={`shadow overflow-hidden rounded-lg ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+          <ul className={`divide-y ${isDarkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
             {items.map((item) => (
-              <li key={item.id} className="px-6 py-4 hover:bg-gray-50">
+              <li key={item.id} className={`px-6 py-4 ${
+                isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'
+              }`}>
                 {editingId === item.id ? (
                   // Edit mode
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                        <label className={`block text-sm font-medium mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Title</label>
                         <input
                           type="text"
                           value={editForm.title}
                           onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-                          className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                          className={`block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${
+                            isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-900'
+                          }`}
                         />
                       </div>
                       <div>
@@ -572,7 +588,9 @@ const Items: React.FC = () => {
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getCategoryColor(item.category)}`}>
                           {item.category.toUpperCase()}
                         </span>
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-800'
+                        }`}>
                           {item.subcategory}
                         </span>
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
@@ -588,8 +606,8 @@ const Items: React.FC = () => {
                           <Star className="h-4 w-4 text-yellow-500 fill-current" />
                         )}
                       </div>
-                      <h3 className="text-sm font-medium text-gray-900">{item.title}</h3>
-                      <p className="text-sm text-gray-500 mt-1">
+                      <h3 className={`text-sm font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{item.title}</h3>
+                      <p className={`text-sm mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                         Added on {formatDate(item.created_at)}
                         {item.completed_at && ` • Completed on ${formatDate(item.completed_at)}`}
                       </p>
@@ -680,10 +698,14 @@ const Items: React.FC = () => {
 
       {/* Pagination Info and Controls */}
       {!loading && pagination.total > 0 && (
-        <div className="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
+        <div className={`px-4 py-3 border-t sm:px-6 ${
+          isDarkMode 
+            ? 'bg-gray-800 border-gray-700' 
+            : 'bg-white border-gray-200'
+        }`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center">
-              <p className="text-sm text-gray-700">
+              <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                 Showing{' '}
                 <span className="font-medium">
                   {pagination.offset + 1}

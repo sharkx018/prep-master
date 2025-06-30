@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTheme } from '../contexts/ThemeContext';
 import { 
   ExternalLink, 
   CheckCircle, 
@@ -13,6 +14,7 @@ import {
 import { itemsApi, statsApi, Item, Stats } from '../services/api';
 
 const Study: React.FC = () => {
+  const { isDarkMode } = useTheme();
   const [currentItem, setCurrentItem] = useState<Item | null>(null);
   const [loading, setLoading] = useState(false);
   const [completing, setCompleting] = useState(false);
@@ -165,12 +167,18 @@ const Study: React.FC = () => {
 
     return (
       <div className="mt-6 mb-6">
-        <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-6 shadow-sm border border-indigo-100">
+        <div className={`rounded-xl p-6 shadow-sm border ${
+          isDarkMode 
+            ? 'bg-gradient-to-r from-indigo-900/30 to-purple-900/30 border-indigo-800' 
+            : 'bg-gradient-to-r from-indigo-50 to-purple-50 border-indigo-100'
+        }`}>
           <div className="flex items-center mb-4">
-            <div className="p-2 bg-white rounded-lg shadow-sm mr-3">
+            <div className={`p-2 rounded-lg shadow-sm mr-3 ${
+              isDarkMode ? 'bg-gray-700' : 'bg-white'
+            }`}>
               <Info className="h-5 w-5 text-indigo-600" />
             </div>
-            <h4 className="text-base font-bold text-gray-900">Additional Information</h4>
+            <h4 className={`text-base font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Additional Information</h4>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -189,20 +197,30 @@ const Study: React.FC = () => {
                       href={value}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center bg-white rounded-lg px-4 py-3 shadow-sm border border-gray-200 hover:border-indigo-300 hover:shadow-lg transition-all group cursor-pointer"
+                      className={`flex items-center rounded-lg px-4 py-3 shadow-sm border hover:border-indigo-300 hover:shadow-lg transition-all group cursor-pointer ${
+                        isDarkMode 
+                          ? 'bg-gray-700 border-gray-600' 
+                          : 'bg-white border-gray-200'
+                      }`}
                     >
                       {getIconForKey(key)}
-                      <span className="text-sm font-semibold text-gray-800 group-hover:text-indigo-600 transition-colors capitalize">
+                      <span className={`text-sm font-semibold group-hover:text-indigo-600 transition-colors capitalize ${
+                        isDarkMode ? 'text-gray-200' : 'text-gray-800'
+                      }`}>
                         {key.replace(/[-_]/g, ' ')}
                       </span>
                       <ExternalLink className="h-3 w-3 text-gray-400 ml-auto group-hover:text-indigo-600 transition-colors" />
                     </a>
                   ) : (
-                    <div className={`flex items-center bg-white rounded-lg px-4 py-3 shadow-sm border ${difficultyClass || 'border-gray-200'}`}>
+                    <div className={`flex items-center rounded-lg px-4 py-3 shadow-sm border ${
+                      difficultyClass || (isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200')
+                    }`}>
                       {isDifficulty ? (
                         <>
                           <Hash className={`h-4 w-4 mr-2 flex-shrink-0 ${difficultyClass.split(' ')[0]}`} />
-                          <span className="text-sm font-medium text-gray-700 mr-2 capitalize">{key.replace(/[-_]/g, ' ')}:</span>
+                          <span className={`text-sm font-medium mr-2 capitalize ${
+                            isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                          }`}>{key.replace(/[-_]/g, ' ')}:</span>
                           <span className={`text-sm font-bold capitalize ${difficultyClass.split(' ')[0]}`}>
                             {value}
                           </span>
@@ -210,8 +228,12 @@ const Study: React.FC = () => {
                       ) : (
                         <>
                           <Hash className="h-4 w-4 text-gray-500 mr-2 flex-shrink-0" />
-                          <span className="text-sm font-medium text-gray-700 mr-2 capitalize">{key.replace(/[-_]/g, ' ')}:</span>
-                          <span className="text-sm text-gray-900 font-medium">{value}</span>
+                          <span className={`text-sm font-medium mr-2 capitalize ${
+                            isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                          }`}>{key.replace(/[-_]/g, ' ')}:</span>
+                          <span className={`text-sm font-medium ${
+                            isDarkMode ? 'text-gray-200' : 'text-gray-900'
+                          }`}>{value}</span>
                         </>
                       )}
                     </div>
@@ -228,29 +250,31 @@ const Study: React.FC = () => {
   return (
     <div>
       <div className="mb-8">
-        <h2 className="text-2xl font-bold text-gray-900">Study Mode</h2>
-        <p className="mt-1 text-sm text-gray-600">
+        <h2 className={`text-2xl font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Study Mode</h2>
+        <p className={`mt-1 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
           Practice with random items from your collection
         </p>
       </div>
 
       {/* Progress Bar */}
       {stats && (
-        <div className="mb-6 bg-white rounded-lg shadow p-4">
+        <div className={`mb-6 rounded-lg shadow p-4 ${
+          isDarkMode ? 'bg-gray-800' : 'bg-white'
+        }`}>
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-700">Overall Progress</h3>
-            <span className="text-sm font-semibold text-gray-900">
+            <h3 className={`text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Overall Progress</h3>
+            <span className={`text-sm font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
               {stats?.completed_items || 0} / {stats?.total_items || 0} items ({(stats?.progress_percentage || 0).toFixed(1)}%)
             </span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-3">
+          <div className={`w-full rounded-full h-3 ${isDarkMode ? 'bg-gray-600' : 'bg-gray-200'}`}>
             <div
               className="bg-gradient-to-r from-indigo-500 to-purple-600 h-3 rounded-full transition-all duration-300"
               style={{ width: `${stats?.progress_percentage || 0}%` }}
             />
           </div>
           {stats && stats.completed_all_count > 0 && (
-            <p className="mt-2 text-xs text-gray-600">
+            <p className={`mt-2 text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
               Completion cycles: {stats.completed_all_count}
             </p>
           )}
@@ -258,18 +282,24 @@ const Study: React.FC = () => {
       )}
 
       {error && (
-        <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center">
+        <div className={`mb-6 border px-4 py-3 rounded-lg flex items-center ${
+          isDarkMode 
+            ? 'bg-red-900/20 border-red-800 text-red-300' 
+            : 'bg-red-50 border-red-200 text-red-700'
+        }`}>
           <AlertCircle className="h-5 w-5 mr-2" />
           {error}
         </div>
       )}
 
       {!currentItem && !loading && !noItems && (
-        <div className="bg-white rounded-lg shadow-lg p-8 text-center">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">
+        <div className={`rounded-lg shadow-lg p-8 text-center ${
+          isDarkMode ? 'bg-gray-800' : 'bg-white'
+        }`}>
+          <h3 className={`text-lg font-medium mb-4 ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
             Ready to start studying?
           </h3>
-          <p className="text-gray-600 mb-6">
+          <p className={`mb-6 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
             Click the button below to get a random item from your pending list
           </p>
           <button
@@ -283,33 +313,41 @@ const Study: React.FC = () => {
       )}
 
       {loading && (
-        <div className="bg-white rounded-lg shadow-lg p-8 text-center">
+        <div className={`rounded-lg shadow-lg p-8 text-center ${
+          isDarkMode ? 'bg-gray-800' : 'bg-white'
+        }`}>
           <Loader2 className="h-8 w-8 animate-spin text-indigo-600 mx-auto mb-4" />
-          <p className="text-gray-600">Loading next item...</p>
+          <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>Loading next item...</p>
         </div>
       )}
 
       {noItems && (
-        <div className="bg-white rounded-lg shadow-lg p-8 text-center">
+        <div className={`rounded-lg shadow-lg p-8 text-center ${
+          isDarkMode ? 'bg-gray-800' : 'bg-white'
+        }`}>
           <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
+          <h3 className={`text-lg font-medium mb-2 ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
             All caught up!
           </h3>
-          <p className="text-gray-600">
+          <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
             You've completed all items. Great job! 🎉
           </p>
         </div>
       )}
 
       {currentItem && !loading && (
-        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+        <div className={`rounded-lg shadow-lg overflow-hidden ${
+          isDarkMode ? 'bg-gray-800' : 'bg-white'
+        }`}>
           <div className="p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-3">
                 <span className={`inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium ${getCategoryColor(currentItem.category)}`}>
                   {currentItem.category.toUpperCase()}
                 </span>
-                <span className="inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
+                <span className={`inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium ${
+                  isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-800'
+                }`}>
                   {currentItem.subcategory}
                 </span>
                 {currentItem.starred && (
@@ -318,7 +356,7 @@ const Study: React.FC = () => {
               </div>
             </div>
 
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+            <h3 className={`text-xl font-semibold mb-2 ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
               <a
                 href={currentItem.link}
                 target="_blank"
@@ -329,7 +367,7 @@ const Study: React.FC = () => {
               </a>
             </h3>
 
-            <p className="text-sm text-gray-600 mb-4">
+            <p className={`text-sm mb-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
               Category: {getCategoryFullName(currentItem.category)}
             </p>
 
@@ -340,7 +378,11 @@ const Study: React.FC = () => {
                 href={currentItem.link}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                className={`inline-flex items-center px-4 py-2 border text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${
+                  isDarkMode 
+                    ? 'border-gray-600 text-gray-300 bg-gray-700 hover:bg-gray-600' 
+                    : 'border-gray-300 text-gray-700 bg-white hover:bg-gray-50'
+                }`}
               >
                 <ExternalLink className="h-4 w-4 mr-2" />
                 Open Link
@@ -350,7 +392,11 @@ const Study: React.FC = () => {
                 <button
                   onClick={skipItem}
                   disabled={loading || completing}
-                  className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className={`inline-flex items-center px-4 py-2 border text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed ${
+                    isDarkMode 
+                      ? 'border-gray-600 text-gray-300 bg-gray-700 hover:bg-gray-600' 
+                      : 'border-gray-300 text-gray-700 bg-white hover:bg-gray-50'
+                  }`}
                 >
                   <RefreshCw className="h-4 w-4 mr-2" />
                   Skip

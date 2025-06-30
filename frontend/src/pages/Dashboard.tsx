@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTheme } from '../contexts/ThemeContext';
 import { 
   BookOpen, 
   CheckCircle, 
@@ -16,6 +17,7 @@ import {
 import { statsApi, itemsApi, Stats } from '../services/api';
 
 const Dashboard: React.FC = () => {
+  const { isDarkMode } = useTheme();
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -63,7 +65,11 @@ const Dashboard: React.FC = () => {
 
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+      <div className={`border px-4 py-3 rounded-lg ${
+        isDarkMode 
+          ? 'bg-red-900/20 border-red-800 text-red-300' 
+          : 'bg-red-50 border-red-200 text-red-700'
+      }`}>
         {error}
       </div>
     );
@@ -138,14 +144,22 @@ const Dashboard: React.FC = () => {
         {statCards.map((stat) => {
           const Icon = stat.icon;
           return (
-            <div key={stat.title} className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-gray-100">
+            <div key={stat.title} className={`rounded-xl shadow-lg p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border ${
+              isDarkMode 
+                ? 'bg-gray-800 border-gray-700 hover:bg-gray-750' 
+                : 'bg-white border-gray-100'
+            }`}>
               <div className="flex items-center">
                 <div className={`${stat.lightColor} rounded-lg p-3 shadow-sm`}>
                   <Icon className={`h-6 w-6 ${stat.textColor}`} />
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">{stat.title}</p>
-                  <p className="text-3xl font-bold bg-gradient-to-r from-gray-700 to-gray-900 bg-clip-text text-transparent">
+                  <p className={`text-sm font-medium ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>{stat.title}</p>
+                  <p className={`text-3xl font-bold ${
+                    isDarkMode 
+                      ? 'bg-gradient-to-r from-gray-200 to-gray-400 bg-clip-text text-transparent' 
+                      : 'bg-gradient-to-r from-gray-700 to-gray-900 bg-clip-text text-transparent'
+                  }`}>
                     {stat.value}
                   </p>
                 </div>
@@ -156,9 +170,13 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Progress Bar */}
-      <div className="bg-gradient-to-br from-white to-indigo-50 rounded-xl shadow-lg p-8 mb-8 border border-indigo-100">
+      <div className={`rounded-xl shadow-lg p-8 mb-8 border transition-colors duration-300 ${
+        isDarkMode 
+          ? 'bg-gradient-to-br from-gray-800 to-gray-700 border-gray-600' 
+          : 'bg-gradient-to-br from-white to-indigo-50 border-indigo-100'
+      }`}>
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-bold text-gray-900">Overall Progress</h3>
+          <h3 className={`text-xl font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Overall Progress</h3>
           <div className="flex items-center space-x-2">
             {(stats?.progress_percentage || 0) >= 80 && <Trophy className="h-6 w-6 text-yellow-500" />}
             {(stats?.progress_percentage || 0) >= 50 && (stats?.progress_percentage || 0) < 80 && <Target className="h-6 w-6 text-blue-500" />}
@@ -168,7 +186,9 @@ const Dashboard: React.FC = () => {
         <div className="relative">
           <div className="flex mb-3 items-center justify-between">
             <div>
-              <span className="text-sm font-bold text-indigo-700">
+              <span className={`text-sm font-bold ${
+                isDarkMode ? 'text-indigo-300' : 'text-indigo-700'
+              }`}>
                 {stats?.completed_items || 0} of {stats?.total_items || 0} items completed
               </span>
             </div>
@@ -178,7 +198,9 @@ const Dashboard: React.FC = () => {
               </span>
             </div>
           </div>
-          <div className="overflow-hidden h-4 text-xs flex rounded-full bg-gray-200 shadow-inner">
+          <div className={`overflow-hidden h-4 text-xs flex rounded-full shadow-inner ${
+            isDarkMode ? 'bg-gray-600' : 'bg-gray-200'
+          }`}>
             <div
               style={{ width: `${stats?.progress_percentage || 0}%` }}
               className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-1000 ease-out rounded-full"
@@ -200,21 +222,33 @@ const Dashboard: React.FC = () => {
             <button
               onClick={() => setShowResetConfirm(true)}
               disabled={stats?.total_items === 0}
-              className="group flex items-center px-4 py-2 text-sm font-medium rounded-lg bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-red-300 hover:text-red-600 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              className={`group flex items-center px-4 py-2 text-sm font-medium rounded-lg border transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
+                isDarkMode 
+                  ? 'bg-gray-800 border-gray-600 text-gray-300 hover:bg-gray-700 hover:border-red-500 hover:text-red-400' 
+                  : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-red-300 hover:text-red-600'
+              }`}
             >
               <RefreshCw className="h-4 w-4 mr-2 group-hover:text-red-600" />
               Reset All Progress
             </button>
           </div>
         ) : (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className={`border rounded-lg p-4 ${
+            isDarkMode 
+              ? 'bg-red-900/20 border-red-800' 
+              : 'bg-red-50 border-red-200'
+          }`}>
             <div className="flex items-start">
               <AlertCircle className="h-5 w-5 text-red-600 mt-0.5 mr-3 flex-shrink-0" />
               <div className="flex-1">
-                <h4 className="text-sm font-medium text-red-800 mb-1">
+                <h4 className={`text-sm font-medium mb-1 ${
+                  isDarkMode ? 'text-red-300' : 'text-red-800'
+                }`}>
                   Are you sure you want to reset all progress?
                 </h4>
-                <p className="text-sm text-red-700 mb-3">
+                <p className={`text-sm mb-3 ${
+                  isDarkMode ? 'text-red-400' : 'text-red-700'
+                }`}>
                   This will mark all {stats?.total_items} items as pending. This action cannot be undone.
                 </p>
                 <div className="flex space-x-3">
@@ -238,7 +272,11 @@ const Dashboard: React.FC = () => {
                   <button
                     onClick={() => setShowResetConfirm(false)}
                     disabled={resetting}
-                    className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                    className={`inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md border focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 ${
+                      isDarkMode 
+                        ? 'text-gray-300 bg-gray-800 border-gray-600 hover:bg-gray-700' 
+                        : 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50'
+                    }`}
                   >
                     Cancel
                   </button>
@@ -270,16 +308,26 @@ const Dashboard: React.FC = () => {
 
         <Link
           to="/add-item"
-          className="group bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 border-2 border-transparent hover:border-indigo-200"
+          className={`group rounded-xl shadow-lg p-6 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 border-2 border-transparent ${
+            isDarkMode 
+              ? 'bg-gray-800 hover:border-indigo-500' 
+              : 'bg-white hover:border-indigo-200'
+          }`}
         >
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-bold text-gray-900 group-hover:text-indigo-600 transition-colors">Add New Item</h3>
-              <p className="mt-1 text-sm text-gray-600">
+              <h3 className={`text-lg font-bold group-hover:text-indigo-600 transition-colors ${
+                isDarkMode ? 'text-gray-100' : 'text-gray-900'
+              }`}>Add New Item</h3>
+              <p className={`mt-1 text-sm ${
+                isDarkMode ? 'text-gray-400' : 'text-gray-600'
+              }`}>
                 Add a new problem or article
               </p>
             </div>
-            <div className="bg-indigo-50 rounded-full p-2 group-hover:bg-indigo-100 transition-colors">
+            <div className={`rounded-full p-2 group-hover:bg-indigo-100 transition-colors ${
+              isDarkMode ? 'bg-indigo-900/30' : 'bg-indigo-50'
+            }`}>
               <ArrowRight className="h-5 w-5 text-indigo-600 group-hover:translate-x-1 transition-transform" />
             </div>
           </div>
@@ -287,16 +335,26 @@ const Dashboard: React.FC = () => {
 
         <Link
           to="/items"
-          className="group bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 border-2 border-transparent hover:border-purple-200"
+          className={`group rounded-xl shadow-lg p-6 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 border-2 border-transparent ${
+            isDarkMode 
+              ? 'bg-gray-800 hover:border-purple-500' 
+              : 'bg-white hover:border-purple-200'
+          }`}
         >
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-bold text-gray-900 group-hover:text-purple-600 transition-colors">Browse Items</h3>
-              <p className="mt-1 text-sm text-gray-600">
+              <h3 className={`text-lg font-bold group-hover:text-purple-600 transition-colors ${
+                isDarkMode ? 'text-gray-100' : 'text-gray-900'
+              }`}>Browse Items</h3>
+              <p className={`mt-1 text-sm ${
+                isDarkMode ? 'text-gray-400' : 'text-gray-600'
+              }`}>
                 View and manage all items
               </p>
             </div>
-            <div className="bg-purple-50 rounded-full p-2 group-hover:bg-purple-100 transition-colors">
+            <div className={`rounded-full p-2 group-hover:bg-purple-100 transition-colors ${
+              isDarkMode ? 'bg-purple-900/30' : 'bg-purple-50'
+            }`}>
               <ArrowRight className="h-5 w-5 text-purple-600 group-hover:translate-x-1 transition-transform" />
             </div>
           </div>

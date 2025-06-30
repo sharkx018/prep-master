@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTheme } from '../contexts/ThemeContext';
 import { Save, Loader2, Plus, X } from 'lucide-react';
 import { itemsApi, CreateItemRequest } from '../services/api';
 
 const AddItem: React.FC = () => {
+  const { isDarkMode } = useTheme();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -108,22 +110,28 @@ const AddItem: React.FC = () => {
   return (
     <div>
       <div className="mb-8">
-        <h2 className="text-2xl font-bold text-gray-900">Add New Item</h2>
-        <p className="mt-1 text-sm text-gray-600">
+        <h2 className={`text-2xl font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Add New Item</h2>
+        <p className={`mt-1 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
           Add a new problem or article to your study list
         </p>
       </div>
 
-      <div className="bg-white shadow rounded-lg">
+      <div className={`shadow rounded-lg ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+            <div className={`border px-4 py-3 rounded-lg ${
+              isDarkMode 
+                ? 'bg-red-900/20 border-red-800 text-red-300' 
+                : 'bg-red-50 border-red-200 text-red-700'
+            }`}>
               {error}
             </div>
           )}
 
           <div>
-            <label htmlFor="title" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="title" className={`block text-sm font-medium ${
+              isDarkMode ? 'text-gray-300' : 'text-gray-700'
+            }`}>
               Title
             </label>
             <input
@@ -133,13 +141,19 @@ const AddItem: React.FC = () => {
               required
               value={formData.title}
               onChange={handleChange}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              className={`mt-1 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${
+                isDarkMode 
+                  ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-400' 
+                  : 'bg-white border-gray-300 text-gray-900'
+              }`}
               placeholder="e.g., Two Sum Problem"
             />
           </div>
 
           <div>
-            <label htmlFor="link" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="link" className={`block text-sm font-medium ${
+              isDarkMode ? 'text-gray-300' : 'text-gray-700'
+            }`}>
               Link
             </label>
             <input
@@ -149,14 +163,20 @@ const AddItem: React.FC = () => {
               required
               value={formData.link}
               onChange={handleChange}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              className={`mt-1 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${
+                isDarkMode 
+                  ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-400' 
+                  : 'bg-white border-gray-300 text-gray-900'
+              }`}
               placeholder="https://leetcode.com/problems/two-sum/"
             />
           </div>
 
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
             <div>
-              <label htmlFor="category" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="category" className={`block text-sm font-medium ${
+                isDarkMode ? 'text-gray-300' : 'text-gray-700'
+              }`}>
                 Category
               </label>
               <select
@@ -165,7 +185,11 @@ const AddItem: React.FC = () => {
                 required
                 value={formData.category}
                 onChange={handleChange}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                className={`mt-1 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${
+                  isDarkMode 
+                    ? 'bg-gray-700 border-gray-600 text-gray-100' 
+                    : 'bg-white border-gray-300 text-gray-900'
+                }`}
               >
                 <option value="dsa">Data Structures & Algorithms</option>
                 <option value="lld">Low Level Design</option>
@@ -174,7 +198,9 @@ const AddItem: React.FC = () => {
             </div>
 
             <div>
-              <label htmlFor="subcategory" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="subcategory" className={`block text-sm font-medium ${
+                isDarkMode ? 'text-gray-300' : 'text-gray-700'
+              }`}>
                 Subcategory
               </label>
               <select
@@ -183,7 +209,11 @@ const AddItem: React.FC = () => {
                 required
                 value={formData.subcategory}
                 onChange={handleChange}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                className={`mt-1 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${
+                  isDarkMode 
+                    ? 'bg-gray-700 border-gray-600 text-gray-100' 
+                    : 'bg-white border-gray-300 text-gray-900'
+                }`}
               >
                 {subcategories && subcategories.length > 0 ? (
                   subcategories.map((sub) => (
@@ -201,7 +231,9 @@ const AddItem: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className={`block text-sm font-medium mb-2 ${
+              isDarkMode ? 'text-gray-300' : 'text-gray-700'
+            }`}>
               Attachments
             </label>
             
@@ -209,8 +241,10 @@ const AddItem: React.FC = () => {
             {formData.attachments && Object.keys(formData.attachments).length > 0 && (
               <div className="mb-3 space-y-2">
                 {Object.entries(formData.attachments).map(([key, value]) => (
-                  <div key={key} className="flex items-center justify-between bg-gray-50 rounded-md px-3 py-2">
-                    <span className="text-sm">
+                  <div key={key} className={`flex items-center justify-between rounded-md px-3 py-2 ${
+                    isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
+                  }`}>
+                    <span className={`text-sm ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>
                       <span className="font-medium">{key}:</span> {value}
                     </span>
                     <button
@@ -233,7 +267,11 @@ const AddItem: React.FC = () => {
                 onChange={(e) => setAttachmentKey(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder="Key (e.g., youtube)"
-                className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                className={`flex-1 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${
+                  isDarkMode 
+                    ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-400' 
+                    : 'bg-white border-gray-300 text-gray-900'
+                }`}
               />
               <input
                 type="text"
@@ -241,18 +279,26 @@ const AddItem: React.FC = () => {
                 onChange={(e) => setAttachmentValue(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder="Value (e.g., https://youtube.com/...)"
-                className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                className={`flex-1 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${
+                  isDarkMode 
+                    ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-400' 
+                    : 'bg-white border-gray-300 text-gray-900'
+                }`}
               />
               <button
                 type="button"
                 onClick={addAttachment}
                 disabled={!attachmentKey.trim() || !attachmentValue.trim()}
-                className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className={`inline-flex items-center px-3 py-2 border text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed ${
+                  isDarkMode 
+                    ? 'border-gray-600 text-gray-300 bg-gray-700 hover:bg-gray-600' 
+                    : 'border-gray-300 text-gray-700 bg-white hover:bg-gray-50'
+                }`}
               >
                 <Plus className="h-4 w-4" />
               </button>
             </div>
-            <p className="mt-1 text-xs text-gray-500">
+            <p className={`mt-1 text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
               Add custom attributes like difficulty level, video links, etc.
             </p>
           </div>
@@ -261,7 +307,11 @@ const AddItem: React.FC = () => {
             <button
               type="button"
               onClick={() => navigate('/items')}
-              className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              className={`inline-flex items-center px-4 py-2 border text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${
+                isDarkMode 
+                  ? 'border-gray-600 text-gray-300 bg-gray-700 hover:bg-gray-600' 
+                  : 'border-gray-300 text-gray-700 bg-white hover:bg-gray-50'
+              }`}
             >
               Cancel
             </button>

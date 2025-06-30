@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTheme } from '../contexts/ThemeContext';
 import { 
   BarChart, 
   Bar, 
@@ -16,6 +17,7 @@ import { Loader2 } from 'lucide-react';
 import { statsApi, DetailedStats } from '../services/api';
 
 const Stats: React.FC = () => {
+  const { isDarkMode } = useTheme();
   const [stats, setStats] = useState<DetailedStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -47,7 +49,11 @@ const Stats: React.FC = () => {
 
   if (error || !stats || !stats.overall) {
     return (
-      <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+      <div className={`border px-4 py-3 rounded-lg ${
+        isDarkMode 
+          ? 'bg-red-900/20 border-red-800 text-red-300' 
+          : 'bg-red-50 border-red-200 text-red-700'
+      }`}>
         {error || 'Failed to load statistics'}
       </div>
     );
@@ -83,16 +89,16 @@ const Stats: React.FC = () => {
   return (
     <div>
       <div className="mb-8">
-        <h2 className="text-2xl font-bold text-gray-900">Statistics</h2>
-        <p className="mt-1 text-sm text-gray-600">
+        <h2 className={`text-2xl font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Statistics</h2>
+        <p className={`mt-1 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
           Detailed insights into your interview preparation progress
         </p>
       </div>
 
       {/* Overall Stats */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Overall Progress</h3>
+        <div className={`rounded-lg shadow p-6 ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+          <h3 className={`text-lg font-medium mb-4 ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Overall Progress</h3>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie
@@ -109,25 +115,46 @@ const Stats: React.FC = () => {
                   <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}
               </Pie>
-              <Tooltip />
+              <Tooltip 
+                contentStyle={{
+                  backgroundColor: isDarkMode ? '#374151' : '#ffffff',
+                  border: isDarkMode ? '1px solid #4b5563' : '1px solid #e5e7eb',
+                  borderRadius: '6px',
+                  color: isDarkMode ? '#f3f4f6' : '#1f2937'
+                }}
+              />
             </PieChart>
           </ResponsiveContainer>
           <div className="mt-4 text-center">
-            <p className="text-2xl font-bold text-gray-900">
+            <p className={`text-2xl font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
               {(stats?.overall?.progress_percentage || 0).toFixed(1)}%
             </p>
-            <p className="text-sm text-gray-600">Overall Completion</p>
+            <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Overall Completion</p>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Category Breakdown</h3>
+        <div className={`rounded-lg shadow p-6 ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+          <h3 className={`text-lg font-medium mb-4 ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Category Breakdown</h3>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={categoryData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
+              <CartesianGrid strokeDasharray="3 3" stroke={isDarkMode ? '#374151' : '#e5e7eb'} />
+              <XAxis 
+                dataKey="name" 
+                tick={{ fill: isDarkMode ? '#9ca3af' : '#6b7280' }}
+                axisLine={{ stroke: isDarkMode ? '#4b5563' : '#d1d5db' }}
+              />
+              <YAxis 
+                tick={{ fill: isDarkMode ? '#9ca3af' : '#6b7280' }}
+                axisLine={{ stroke: isDarkMode ? '#4b5563' : '#d1d5db' }}
+              />
+              <Tooltip 
+                contentStyle={{
+                  backgroundColor: isDarkMode ? '#374151' : '#ffffff',
+                  border: isDarkMode ? '1px solid #4b5563' : '1px solid #e5e7eb',
+                  borderRadius: '6px',
+                  color: isDarkMode ? '#f3f4f6' : '#1f2937'
+                }}
+              />
               <Legend />
               <Bar dataKey="completed" fill="#10b981" name="Completed" />
               <Bar dataKey="pending" fill="#f59e0b" name="Pending" />
@@ -140,9 +167,9 @@ const Stats: React.FC = () => {
       {stats?.categories && Array.isArray(stats.categories) && stats.categories.length > 0 && (
         <div className="space-y-6">
           {stats.categories.map((category) => (
-            <div key={category.category} className="bg-white rounded-lg shadow p-6">
+            <div key={category.category} className={`rounded-lg shadow p-6 ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
             <div className="mb-4">
-              <h3 className="text-lg font-medium text-gray-900">
+              <h3 className={`text-lg font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
                 {category.category.toUpperCase()} - {
                   category.category === 'dsa' ? 'Data Structures & Algorithms' :
                   category.category === 'lld' ? 'Low Level Design' :
@@ -150,11 +177,11 @@ const Stats: React.FC = () => {
                 }
               </h3>
               <div className="mt-2">
-                <div className="flex justify-between text-sm text-gray-600 mb-1">
+                <div className={`flex justify-between text-sm mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                   <span>Progress</span>
                   <span className="font-medium">{(category.progress_percentage || 0).toFixed(1)}%</span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className={`w-full rounded-full h-2 ${isDarkMode ? 'bg-gray-600' : 'bg-gray-200'}`}>
                   <div
                     className="h-2 rounded-full transition-all duration-500"
                     style={{
@@ -169,28 +196,30 @@ const Stats: React.FC = () => {
             {/* Subcategory Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {category.subcategories && Array.isArray(category.subcategories) && category.subcategories.map((sub) => (
-                <div key={sub.subcategory} className="border rounded-lg p-4">
-                  <h4 className="text-sm font-medium text-gray-900 mb-2">
+                <div key={sub.subcategory} className={`border rounded-lg p-4 ${
+                  isDarkMode ? 'border-gray-600' : 'border-gray-200'
+                }`}>
+                  <h4 className={`text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
                     {sub.subcategory.split('-').map(word => 
                       word.charAt(0).toUpperCase() + word.slice(1)
                     ).join(' ')}
                   </h4>
                   <div className="space-y-1 text-xs">
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Total:</span>
+                      <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>Total:</span>
                       <span className="font-medium">{sub.total_items}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Completed:</span>
+                      <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>Completed:</span>
                       <span className="font-medium text-green-600">{sub.completed_items}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Pending:</span>
+                      <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>Pending:</span>
                       <span className="font-medium text-yellow-600">{sub.pending_items}</span>
                     </div>
                   </div>
                   <div className="mt-2">
-                    <div className="w-full bg-gray-200 rounded-full h-1.5">
+                    <div className={`w-full rounded-full h-1.5 ${isDarkMode ? 'bg-gray-600' : 'bg-gray-200'}`}>
                       <div
                         className="h-1.5 rounded-full bg-indigo-600 transition-all duration-500"
                         style={{ width: `${sub.progress_percentage}%` }}
@@ -207,11 +236,19 @@ const Stats: React.FC = () => {
 
       {/* Summary Card */}
       {stats?.overall && (
-        <div className="mt-8 bg-indigo-50 rounded-lg p-6">
-          <h3 className="text-lg font-medium text-indigo-900 mb-2">
+        <div className={`mt-8 rounded-lg p-6 ${
+          isDarkMode 
+            ? 'bg-indigo-900/30 border border-indigo-800' 
+            : 'bg-indigo-50'
+        }`}>
+          <h3 className={`text-lg font-medium mb-2 ${
+            isDarkMode ? 'text-indigo-300' : 'text-indigo-900'
+          }`}>
             Completion Cycles: {stats.overall.completed_all_count || 0}
           </h3>
-          <p className="text-sm text-indigo-700">
+          <p className={`text-sm ${
+            isDarkMode ? 'text-indigo-400' : 'text-indigo-700'
+          }`}>
             You've completed all items {stats.overall.completed_all_count || 0} time{(stats.overall.completed_all_count || 0) !== 1 ? 's' : ''}.
             {(stats.overall.completed_all_count || 0) > 0 && ' Great job on your consistency!'}
           </p>
