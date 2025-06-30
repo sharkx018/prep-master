@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { Lock, User, Eye, EyeOff, Brain, Sparkles, Code2, Github, Linkedin } from 'lucide-react';
+import { useTheme } from '../contexts/ThemeContext';
+import { Lock, User, Eye, EyeOff, Brain, Sparkles, Code2, Github, Linkedin, Moon, Sun } from 'lucide-react';
 
 const Login: React.FC = () => {
+  const { isDarkMode, toggleTheme } = useTheme();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -25,7 +27,11 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col">
+    <div className={`min-h-screen flex flex-col transition-colors duration-300 ${
+      isDarkMode 
+        ? 'bg-gradient-to-br from-gray-900 to-gray-800' 
+        : 'bg-gradient-to-br from-gray-50 to-gray-100'
+    }`}>
       {/* Header matching the main app */}
       <header className="bg-gradient-to-r from-indigo-600 to-purple-600 shadow-lg flex-shrink-0">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -58,6 +64,13 @@ const Login: React.FC = () => {
               >
                 <Linkedin className="h-5 w-5" />
               </a>
+              <button
+                onClick={toggleTheme}
+                className="p-2 text-white/80 hover:text-white hover:bg-white/20 rounded-full transition-all duration-300 hover:scale-110"
+                title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+              >
+                {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+              </button>
               <div className="flex items-center text-white bg-white/20 px-3 py-1 rounded-full">
                 <Code2 className="h-4 w-4 mr-1" />
                 <span className="text-sm font-medium">v2.0</span>
@@ -68,25 +81,37 @@ const Login: React.FC = () => {
       </header>
 
       {/* Main login content */}
-      <div className="flex-1 flex items-center justify-center p-8">
+      <div className="flex-1 flex items-center justify-center p-8 relative">
         <div className="max-w-md w-full space-y-8">
-          <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+          <div className={`rounded-2xl shadow-xl p-8 border transition-colors duration-300 ${
+            isDarkMode 
+              ? 'bg-gray-800 border-gray-700' 
+              : 'bg-white border-gray-100'
+          }`}>
             <div className="text-center">
               <div className="mx-auto h-16 w-16 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-full flex items-center justify-center shadow-lg relative">
                 <Lock className="h-8 w-8 text-white" />
                 <Sparkles className="h-4 w-4 text-yellow-300 absolute -top-1 -right-1" />
               </div>
-              <h2 className="mt-6 text-3xl font-extrabold bg-gradient-to-r from-gray-700 to-gray-900 bg-clip-text text-transparent">
+              <h2 className={`mt-6 text-3xl font-extrabold bg-gradient-to-r bg-clip-text text-transparent ${
+                isDarkMode 
+                  ? 'from-gray-200 to-gray-400' 
+                  : 'from-gray-700 to-gray-900'
+              }`}>
                 Welcome Back
               </h2>
-              <p className="mt-2 text-sm text-gray-600">
+              <p className={`mt-2 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                 Sign in to access your <span className="font-semibold text-indigo-600">PrepMaster Pro</span> dashboard
               </p>
             </div>
             
             <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
               {error && (
-                <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm flex items-center">
+                <div className={`border px-4 py-3 rounded-lg text-sm flex items-center ${
+                  isDarkMode 
+                    ? 'bg-red-900/20 border-red-800 text-red-300' 
+                    : 'bg-red-50 border-red-200 text-red-600'
+                }`}>
                   <div className="flex-shrink-0 mr-2">
                     <div className="h-2 w-2 bg-red-400 rounded-full"></div>
                   </div>
@@ -96,7 +121,9 @@ const Login: React.FC = () => {
               
               <div className="space-y-4">
                 <div>
-                  <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="username" className={`block text-sm font-medium mb-2 ${
+                    isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                  }`}>
                     Username
                   </label>
                   <div className="relative">
@@ -108,7 +135,11 @@ const Login: React.FC = () => {
                       name="username"
                       type="text"
                       required
-                      className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 shadow-sm"
+                      className={`block w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 shadow-sm ${
+                        isDarkMode 
+                          ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-400' 
+                          : 'bg-white border-gray-300 text-gray-900'
+                      }`}
                       placeholder="Enter your username"
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
@@ -117,7 +148,9 @@ const Login: React.FC = () => {
                 </div>
                 
                 <div>
-                  <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="password" className={`block text-sm font-medium mb-2 ${
+                    isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                  }`}>
                     Password
                   </label>
                   <div className="relative">
@@ -129,7 +162,11 @@ const Login: React.FC = () => {
                       name="password"
                       type={showPassword ? 'text' : 'password'}
                       required
-                      className="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 shadow-sm"
+                      className={`block w-full pl-10 pr-10 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 shadow-sm ${
+                        isDarkMode 
+                          ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-400' 
+                          : 'bg-white border-gray-300 text-gray-900'
+                      }`}
                       placeholder="Enter your password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
@@ -171,18 +208,45 @@ const Login: React.FC = () => {
             </form>
             
             <div className="mt-6">
-              <div className="p-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg border border-indigo-100">
+              <div className={`p-4 rounded-lg border ${
+                isDarkMode 
+                  ? 'bg-gradient-to-r from-indigo-900/30 to-purple-900/30 border-indigo-800' 
+                  : 'bg-gradient-to-r from-indigo-50 to-purple-50 border-indigo-100'
+              }`}>
                 <div className="flex items-center justify-center space-x-2 mb-2">
                   <div className="h-2 w-2 bg-indigo-400 rounded-full"></div>
-                  <span className="text-xs font-semibold text-indigo-900">Enterprise Security</span>
+                  <span className={`text-xs font-semibold ${
+                    isDarkMode ? 'text-indigo-300' : 'text-indigo-900'
+                  }`}>Enterprise Security</span>
                   <div className="h-2 w-2 bg-purple-400 rounded-full"></div>
                 </div>
-                <p className="text-xs text-indigo-700 text-center">
+                <p className={`text-xs text-center ${
+                  isDarkMode ? 'text-indigo-400' : 'text-indigo-700'
+                }`}>
                   Your data is protected with industry-standard encryption
                 </p>
               </div>
             </div>
           </div>
+        </div>
+        
+        {/* Stable branding */}
+        <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2">
+          <a 
+            href="https://www.instagram.com/vrma018_/" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className={`flex items-center space-x-2 px-4 py-2 border rounded-lg transition-all duration-300 hover:scale-105 ${
+              isDarkMode
+                ? 'bg-gradient-to-r from-purple-900/30 to-pink-900/30 border-purple-700'
+                : 'bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200'
+            }`}
+          >
+            <div className="w-2 h-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full"></div>
+            <span className="text-lg font-mono font-medium bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent tracking-widest">
+              @vrma018_
+            </span>
+          </a>
         </div>
       </div>
     </div>
