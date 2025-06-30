@@ -30,13 +30,18 @@ const AddItem: React.FC = () => {
         ? response.subcategories 
         : [];
       setSubcategories(subs);
-      // Set default subcategory when category changes
-      if (subs.length > 0) {
-        setFormData(prev => ({ ...prev, subcategory: subs[0] }));
-      }
+      
+      // Reset subcategory when category changes - only set to first item if we have subcategories
+      // This ensures the subcategory gets properly reset and user sees the change
+      setFormData(prev => ({ 
+        ...prev, 
+        subcategory: subs.length > 0 ? subs[0] : '' 
+      }));
     } catch (err) {
       console.error('Failed to fetch subcategories', err);
       setSubcategories([]); // Set empty array on error
+      // Reset subcategory on error
+      setFormData(prev => ({ ...prev, subcategory: '' }));
     }
   };
 
@@ -58,7 +63,17 @@ const AddItem: React.FC = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    
+    // If category is changing, immediately reset subcategory to show the change
+    if (name === 'category') {
+      setFormData(prev => ({ 
+        ...prev, 
+        category: value as CreateItemRequest['category'],
+        subcategory: '' // Reset subcategory immediately when category changes
+      }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
   };
 
   const addAttachment = () => {
