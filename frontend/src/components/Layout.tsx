@@ -41,7 +41,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col">
       {/* Header */}
-      <header className="bg-gradient-to-r from-indigo-600 to-purple-600 shadow-lg flex-shrink-0">
+      <header className="bg-gradient-to-r from-indigo-600 to-purple-600 shadow-lg flex-shrink-0 fixed top-0 left-0 right-0 z-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
@@ -96,9 +96,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         </div>
       </header>
 
-      <div className="flex flex-1">
+      <div className="flex flex-1 relative">
         {/* Sidebar */}
-        <nav className="w-64 bg-white shadow-lg border-r border-gray-100 flex flex-col">
+        <nav className="w-64 bg-white shadow-lg border-r border-gray-100 flex flex-col fixed top-16 bottom-0 left-0 z-10">
           <div className="flex-1 p-4 overflow-y-auto">
             <div className="mb-6 p-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg border border-indigo-100">
               <h3 className="text-sm font-semibold text-indigo-900 mb-1">Welcome back!</h3>
@@ -125,17 +125,17 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               })}
             </ul>
           </div>
-          <div className="flex-shrink-0 p-4 border-t border-gray-100">
-            <div className="p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg">
-              <p className="text-xs text-gray-600 text-center">
-                <span className="font-semibold text-indigo-600">Your data is protected with industry-standard encryption</span>
-              </p>
+          <div className="flex-shrink-0 p-6">
+            <div className="flex items-center justify-center">
+              <div className="px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg">
+                <span className="text-lg font-mono font-medium text-gray-800 tracking-widest">vrma018_</span>
+              </div>
             </div>
           </div>
         </nav>
 
         {/* Main content */}
-        <main className="flex-1 p-8 overflow-y-auto">
+        <main className="flex-1 p-8 overflow-y-auto ml-64 mt-16">
           <div className="max-w-7xl mx-auto">
             {children}
           </div>
