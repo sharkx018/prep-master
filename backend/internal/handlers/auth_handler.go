@@ -49,11 +49,10 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	log.Printf(h.config.AuthUsername)
-	log.Printf(h.config.AuthPassword)
+	log.Printf("Login attempt for user: %s", req.Username)
 
-	// Validate credentials
-	if req.Username != h.config.AuthUsername || req.Password != h.config.AuthPassword {
+	// Validate credentials using the new multi-user system
+	if !h.config.ValidateCredentials(req.Username, req.Password) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
 	}
