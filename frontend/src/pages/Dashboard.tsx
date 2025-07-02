@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
+import { useAuth } from '../contexts/AuthContext';
 import { 
   BookOpen, 
   CheckCircle, 
@@ -18,6 +19,7 @@ import { statsApi, itemsApi, Stats } from '../services/api';
 
 const Dashboard: React.FC = () => {
   const { isDarkMode } = useTheme();
+  const { user } = useAuth();
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -125,14 +127,14 @@ const Dashboard: React.FC = () => {
               <h2 className="text-3xl font-bold">PrepMaster Dashboard</h2>
             </div>
             <p className="text-indigo-100 text-lg mb-2">
-              Welcome back, Mukul! Ready to ace your next interview?
+              Welcome back, {user?.username || 'User'}!
             </p>
             <div className="flex items-center space-x-2">
               <Sparkles className="h-5 w-5 text-yellow-300" />
               <span className="text-sm font-medium text-indigo-200">
                 {stats?.completed_all_count > 0 
                   ? `Amazing! You've completed ${stats.completed_all_count} full cycles!` 
-                  : 'Start your journey to interview success!'}
+                  : 'You will have to hang tough thru this period, but all lies ahead of you, donot stop until you got answers to all question and make your life a success story!'}
               </span>
             </div>
           </div>
