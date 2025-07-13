@@ -30,12 +30,12 @@ func (r *ItemRepository) Create(req *models.CreateItemRequest) (*models.Item, er
 	query := `
 		INSERT INTO items (title, link, category, subcategory, attachments) 
 		VALUES ($1, $2, $3, $4, $5) 
-		RETURNING id, title, link, category, subcategory, status, starred, attachments, created_at, completed_at`
+		RETURNING id, title, link, category, subcategory, attachments, created_at`
 
 	var item models.Item
 	err := r.db.QueryRow(query, req.Title, req.Link, req.Category, req.Subcategory, attachments).Scan(
 		&item.ID, &item.Title, &item.Link, &item.Category, &item.Subcategory,
-		&item.Status, &item.Starred, &item.Attachments, &item.CreatedAt, &item.CompletedAt,
+		&item.Attachments, &item.CreatedAt,
 	)
 
 	if err != nil {
@@ -48,14 +48,14 @@ func (r *ItemRepository) Create(req *models.CreateItemRequest) (*models.Item, er
 // GetByID retrieves an item by its ID
 func (r *ItemRepository) GetByID(id int) (*models.Item, error) {
 	query := `
-		SELECT id, title, link, category, subcategory, status, starred, attachments, created_at, completed_at 
+		SELECT id, title, link, category, subcategory, attachments, created_at 
 		FROM items 
 		WHERE id = $1`
 
 	var item models.Item
 	err := r.db.QueryRow(query, id).Scan(
 		&item.ID, &item.Title, &item.Link, &item.Category, &item.Subcategory,
-		&item.Status, &item.Starred, &item.Attachments, &item.CreatedAt, &item.CompletedAt,
+		&item.Attachments, &item.CreatedAt,
 	)
 
 	if err == sql.ErrNoRows {
@@ -101,7 +101,7 @@ func (r *ItemRepository) GetByIDWithUserProgress(userID, itemID int) (*models.It
 
 // GetAll retrieves items with optional filtering
 func (r *ItemRepository) GetAll(filter *models.ItemFilter) ([]*models.Item, error) {
-	query := "SELECT id, title, link, category, subcategory, status, starred, attachments, created_at, completed_at FROM items WHERE 1=1"
+	query := "SELECT id, title, link, category, subcategory, attachments, created_at FROM items WHERE 1=1"
 	args := []interface{}{}
 	argCount := 0
 
@@ -118,11 +118,8 @@ func (r *ItemRepository) GetAll(filter *models.ItemFilter) ([]*models.Item, erro
 		args = append(args, *filter.Subcategory)
 	}
 
-	if filter.Status != nil {
-		argCount++
-		query += fmt.Sprintf(" AND status = $%d", argCount)
-		args = append(args, *filter.Status)
-	}
+	// Note: Status filtering is no longer supported in this method
+	// Use GetAllWithUserProgress for user-specific status filtering
 
 	query += " ORDER BY created_at DESC"
 
@@ -149,7 +146,7 @@ func (r *ItemRepository) GetAll(filter *models.ItemFilter) ([]*models.Item, erro
 		var item models.Item
 		err := rows.Scan(
 			&item.ID, &item.Title, &item.Link, &item.Category, &item.Subcategory,
-			&item.Status, &item.Starred, &item.Attachments, &item.CreatedAt, &item.CompletedAt,
+			&item.Attachments, &item.CreatedAt,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan item: %w", err)
@@ -233,118 +230,24 @@ func (r *ItemRepository) GetAllWithUserProgress(userID int, filter *models.ItemF
 	return items, nil
 }
 
-// GetRandomPending retrieves a random item with status 'pending'
+// GetRandomPending is deprecated - use GetRandomPendingWithUserProgress instead
 func (r *ItemRepository) GetRandomPending() (*models.Item, error) {
-	query := `
-		SELECT id, title, link, category, subcategory, status, starred, attachments, created_at, completed_at 
-		FROM items 
-		WHERE status = 'pending' 
-		ORDER BY RANDOM() 
-		LIMIT 1`
-
-	var item models.Item
-	err := r.db.QueryRow(query).Scan(
-		&item.ID, &item.Title, &item.Link, &item.Category, &item.Subcategory,
-		&item.Status, &item.Starred, &item.Attachments, &item.CreatedAt, &item.CompletedAt,
-	)
-
-	if err == sql.ErrNoRows {
-		return nil, fmt.Errorf("no pending items found")
-	}
-	if err != nil {
-		return nil, fmt.Errorf("failed to get random pending item: %w", err)
-	}
-
-	return &item, nil
+	return nil, fmt.Errorf("GetRandomPending is deprecated - use GetRandomPendingWithUserProgress instead")
 }
 
-// GetInProgressItem retrieves the current in-progress item if any
+// GetInProgressItem is deprecated - use GetInProgressItemWithUserProgress instead
 func (r *ItemRepository) GetInProgressItem() (*models.Item, error) {
-	query := `
-		SELECT id, title, link, category, subcategory, status, starred, attachments, created_at, completed_at 
-		FROM items 
-		WHERE status = 'in-progress' 
-		LIMIT 1`
-
-	var item models.Item
-	err := r.db.QueryRow(query).Scan(
-		&item.ID, &item.Title, &item.Link, &item.Category, &item.Subcategory,
-		&item.Status, &item.Starred, &item.Attachments, &item.CreatedAt, &item.CompletedAt,
-	)
-
-	if err == sql.ErrNoRows {
-		return nil, nil // No in-progress item
-	}
-	if err != nil {
-		return nil, fmt.Errorf("failed to get in-progress item: %w", err)
-	}
-
-	return &item, nil
+	return nil, fmt.Errorf("GetInProgressItem is deprecated - use GetInProgressItemWithUserProgress instead")
 }
 
-// SetInProgress sets an item as in-progress and ensures only one item can be in-progress
+// SetInProgress is deprecated - use UpsertUserProgressForItem instead
 func (r *ItemRepository) SetInProgress(id int) (*models.Item, error) {
-	tx, err := r.db.Begin()
-	if err != nil {
-		return nil, fmt.Errorf("failed to begin transaction: %w", err)
-	}
-	defer tx.Rollback()
-
-	// First, set any existing in-progress items back to pending
-	_, err = tx.Exec(`UPDATE items SET status = 'pending' WHERE status = 'in-progress'`)
-	if err != nil {
-		return nil, fmt.Errorf("failed to reset in-progress items: %w", err)
-	}
-
-	// Then set the specified item as in-progress
-	query := `
-		UPDATE items 
-		SET status = 'in-progress' 
-		WHERE id = $1 AND status = 'pending'
-		RETURNING id, title, link, category, subcategory, status, starred, attachments, created_at, completed_at`
-
-	var item models.Item
-	err = tx.QueryRow(query, id).Scan(
-		&item.ID, &item.Title, &item.Link, &item.Category, &item.Subcategory,
-		&item.Status, &item.Starred, &item.Attachments, &item.CreatedAt, &item.CompletedAt,
-	)
-
-	if err == sql.ErrNoRows {
-		return nil, fmt.Errorf("item not found or not pending")
-	}
-	if err != nil {
-		return nil, fmt.Errorf("failed to set item in-progress: %w", err)
-	}
-
-	if err = tx.Commit(); err != nil {
-		return nil, fmt.Errorf("failed to commit transaction: %w", err)
-	}
-
-	return &item, nil
+	return nil, fmt.Errorf("SetInProgress is deprecated - use UpsertUserProgressForItem instead")
 }
 
-// MarkComplete marks an item as completed
+// MarkComplete is deprecated - use CompleteItemForUser instead
 func (r *ItemRepository) MarkComplete(id int) (*models.Item, error) {
-	query := `
-		UPDATE items 
-		SET status = 'done', completed_at = CURRENT_TIMESTAMP 
-		WHERE id = $1 AND status = 'in-progress'
-		RETURNING id, title, link, category, subcategory, status, starred, attachments, created_at, completed_at`
-
-	var item models.Item
-	err := r.db.QueryRow(query, id).Scan(
-		&item.ID, &item.Title, &item.Link, &item.Category, &item.Subcategory,
-		&item.Status, &item.Starred, &item.Attachments, &item.CreatedAt, &item.CompletedAt,
-	)
-
-	if err == sql.ErrNoRows {
-		return nil, fmt.Errorf("item not found or not in-progress")
-	}
-	if err != nil {
-		return nil, fmt.Errorf("failed to mark item complete: %w", err)
-	}
-
-	return &item, nil
+	return nil, fmt.Errorf("MarkComplete is deprecated - use CompleteItemForUser instead")
 }
 
 // Update updates an existing item
@@ -394,13 +297,13 @@ func (r *ItemRepository) Update(id int, req *models.UpdateItemRequest) (*models.
 		UPDATE items 
 		SET %s 
 		WHERE id = $%d
-		RETURNING id, title, link, category, subcategory, status, starred, attachments, created_at, completed_at`,
+		RETURNING id, title, link, category, subcategory, attachments, created_at`,
 		strings.Join(setParts, ", "), argCount)
 
 	var item models.Item
 	err := r.db.QueryRow(query, args...).Scan(
 		&item.ID, &item.Title, &item.Link, &item.Category, &item.Subcategory,
-		&item.Status, &item.Starred, &item.Attachments, &item.CreatedAt, &item.CompletedAt,
+		&item.Attachments, &item.CreatedAt,
 	)
 
 	if err == sql.ErrNoRows {
@@ -462,189 +365,39 @@ func (r *ItemRepository) Delete(id int) error {
 	return nil
 }
 
-// ResetAll marks all items as pending
+// ResetAll is deprecated - use ResetAllUserProgress instead
 func (r *ItemRepository) ResetAll() (int64, error) {
-	query := "UPDATE items SET status = 'pending', completed_at = NULL WHERE status IN ('done', 'in-progress')"
-	result, err := r.db.Exec(query)
-	if err != nil {
-		return 0, fmt.Errorf("failed to reset items: %w", err)
-	}
-
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return 0, fmt.Errorf("failed to get rows affected: %w", err)
-	}
-
-	return rowsAffected, nil
+	return 0, fmt.Errorf("ResetAll is deprecated - use ResetAllUserProgress instead")
 }
 
-// GetCounts returns item counts by status
+// GetCounts is deprecated - use GetCountsForUser instead
 func (r *ItemRepository) GetCounts() (total, completed, pending int, err error) {
-	query := `
-		SELECT 
-			COUNT(*) as total,
-			COUNT(CASE WHEN status = 'done' THEN 1 END) as completed,
-			COUNT(CASE WHEN status IN ('pending', 'in-progress') THEN 1 END) as pending
-		FROM items`
-
-	err = r.db.QueryRow(query).Scan(&total, &completed, &pending)
-	if err != nil {
-		return 0, 0, 0, fmt.Errorf("failed to get item counts: %w", err)
-	}
-
-	return total, completed, pending, nil
+	return 0, 0, 0, fmt.Errorf("GetCounts is deprecated - use GetCountsForUser instead")
 }
 
-// GetCountsByCategory returns item counts by category and status
+// GetCountsByCategory is deprecated - use GetCountsByCategoryForUser instead
 func (r *ItemRepository) GetCountsByCategory() (map[models.Category]map[models.Status]int, error) {
-	query := `
-		SELECT category, status, COUNT(*) 
-		FROM items 
-		GROUP BY category, status`
-
-	rows, err := r.db.Query(query)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get counts by category: %w", err)
-	}
-	defer rows.Close()
-
-	counts := make(map[models.Category]map[models.Status]int)
-
-	for rows.Next() {
-		var category models.Category
-		var status models.Status
-		var count int
-
-		err := rows.Scan(&category, &status, &count)
-		if err != nil {
-			return nil, fmt.Errorf("failed to scan category counts: %w", err)
-		}
-
-		if counts[category] == nil {
-			counts[category] = make(map[models.Status]int)
-		}
-		counts[category][status] = count
-	}
-
-	if err = rows.Err(); err != nil {
-		return nil, fmt.Errorf("error iterating category counts: %w", err)
-	}
-
-	return counts, nil
+	return nil, fmt.Errorf("GetCountsByCategory is deprecated - use GetCountsByCategoryForUser instead")
 }
 
-// GetCountsBySubcategory returns item counts by category, subcategory and status
+// GetCountsBySubcategory is deprecated - use GetCountsBySubcategoryForUser instead
 func (r *ItemRepository) GetCountsBySubcategory() (map[models.Category]map[string]map[models.Status]int, error) {
-	query := `
-		SELECT category, subcategory, status, COUNT(*) 
-		FROM items 
-		GROUP BY category, subcategory, status`
-
-	rows, err := r.db.Query(query)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get counts by subcategory: %w", err)
-	}
-	defer rows.Close()
-
-	counts := make(map[models.Category]map[string]map[models.Status]int)
-
-	for rows.Next() {
-		var category models.Category
-		var subcategory string
-		var status models.Status
-		var count int
-
-		err := rows.Scan(&category, &subcategory, &status, &count)
-		if err != nil {
-			return nil, fmt.Errorf("failed to scan subcategory counts: %w", err)
-		}
-
-		if counts[category] == nil {
-			counts[category] = make(map[string]map[models.Status]int)
-		}
-		if counts[category][subcategory] == nil {
-			counts[category][subcategory] = make(map[models.Status]int)
-		}
-		counts[category][subcategory][status] = count
-	}
-
-	if err = rows.Err(); err != nil {
-		return nil, fmt.Errorf("error iterating subcategory counts: %w", err)
-	}
-
-	return counts, nil
+	return nil, fmt.Errorf("GetCountsBySubcategory is deprecated - use GetCountsBySubcategoryForUser instead")
 }
 
-// CountPending returns the number of pending items
+// CountPending is deprecated - use CountPendingForUser instead
 func (r *ItemRepository) CountPending() (int, error) {
-	query := "SELECT COUNT(*) FROM items WHERE status IN ('pending', 'in-progress')"
-	var count int
-	err := r.db.QueryRow(query).Scan(&count)
-	if err != nil {
-		return 0, fmt.Errorf("failed to count pending items: %w", err)
-	}
-	return count, nil
+	return 0, fmt.Errorf("CountPending is deprecated - use CountPendingForUser instead")
 }
 
-// ToggleStar toggles the starred status of an item
+// ToggleStar is deprecated - use ToggleStarForUser instead
 func (r *ItemRepository) ToggleStar(id int) (*models.Item, error) {
-	query := `
-		UPDATE items 
-		SET starred = NOT starred 
-		WHERE id = $1
-		RETURNING id, title, link, category, subcategory, status, starred, attachments, created_at, completed_at`
-
-	var item models.Item
-	err := r.db.QueryRow(query, id).Scan(
-		&item.ID, &item.Title, &item.Link, &item.Category, &item.Subcategory,
-		&item.Status, &item.Starred, &item.Attachments, &item.CreatedAt, &item.CompletedAt,
-	)
-
-	if err == sql.ErrNoRows {
-		return nil, fmt.Errorf("item not found")
-	}
-	if err != nil {
-		return nil, fmt.Errorf("failed to toggle star: %w", err)
-	}
-
-	return &item, nil
+	return nil, fmt.Errorf("ToggleStar is deprecated - use ToggleStarForUser instead")
 }
 
-// UpdateStatus updates the status of an item
+// UpdateStatus is deprecated - use UpdateStatusForUser instead
 func (r *ItemRepository) UpdateStatus(id int, status models.Status) (*models.Item, error) {
-	var query string
-	var args []interface{}
-
-	if status == models.StatusDone {
-		query = `
-			UPDATE items 
-			SET status = $2, completed_at = CURRENT_TIMESTAMP 
-			WHERE id = $1
-			RETURNING id, title, link, category, subcategory, status, starred, attachments, created_at, completed_at`
-	} else {
-		query = `
-			UPDATE items 
-			SET status = $2, completed_at = NULL 
-			WHERE id = $1
-			RETURNING id, title, link, category, subcategory, status, starred, attachments, created_at, completed_at`
-	}
-
-	args = []interface{}{id, status}
-
-	var item models.Item
-	err := r.db.QueryRow(query, args...).Scan(
-		&item.ID, &item.Title, &item.Link, &item.Category, &item.Subcategory,
-		&item.Status, &item.Starred, &item.Attachments, &item.CreatedAt, &item.CompletedAt,
-	)
-
-	if err == sql.ErrNoRows {
-		return nil, fmt.Errorf("item not found")
-	}
-	if err != nil {
-		return nil, fmt.Errorf("failed to update status: %w", err)
-	}
-
-	return &item, nil
+	return nil, fmt.Errorf("UpdateStatus is deprecated - use UpdateStatusForUser instead")
 }
 
 // GetTotalCount returns the total count of items matching the filter
@@ -666,11 +419,8 @@ func (r *ItemRepository) GetTotalCount(filter *models.ItemFilter) (int, error) {
 		args = append(args, *filter.Subcategory)
 	}
 
-	if filter.Status != nil {
-		argCount++
-		query += fmt.Sprintf(" AND status = $%d", argCount)
-		args = append(args, *filter.Status)
-	}
+	// Note: Status filtering is no longer supported in this method
+	// Use GetTotalCountWithUserProgress for user-specific status filtering
 
 	var count int
 	err := r.db.QueryRow(query, args...).Scan(&count)

@@ -50,14 +50,10 @@ CREATE TABLE IF NOT EXISTS items (
     link TEXT NOT NULL,
     category VARCHAR(50) NOT NULL CHECK (category IN ('dsa', 'lld', 'hld')),
     subcategory VARCHAR(100) NOT NULL,
-    status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('done', 'pending', 'in-progress')),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    completed_at TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX IF NOT EXISTS idx_items_status ON items(status);
 CREATE INDEX IF NOT EXISTS idx_items_category ON items(category);
-CREATE INDEX IF NOT EXISTS idx_items_category_status ON items(category, status);
 `
 
 const createAppStatsTable = `
@@ -89,29 +85,16 @@ END $$;
 const fixStatusValues = `
 DO $$
 BEGIN
-    -- First, temporarily drop the check constraint if it exists
-    ALTER TABLE items DROP CONSTRAINT IF EXISTS items_status_check;
-    
-    -- Update any 'not-done' values to 'pending'
-    UPDATE items SET status = 'pending' WHERE status = 'not-done' OR status NOT IN ('done', 'pending', 'in-progress');
-    
-    -- Drop and recreate the default constraint
-    ALTER TABLE items ALTER COLUMN status DROP DEFAULT;
-    ALTER TABLE items ALTER COLUMN status SET DEFAULT 'pending';
-    
-    -- Add the check constraint back with the correct values
-    ALTER TABLE items ADD CONSTRAINT items_status_check CHECK (status IN ('done', 'pending', 'in-progress'));
+    -- This migration is no longer needed as status column is handled in user_progress table
+    -- No operation needed
 END $$;
 `
 
 const addStarredColumn = `
 DO $$ 
 BEGIN 
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                   WHERE table_name='items' AND column_name='starred') THEN
-        ALTER TABLE items ADD COLUMN starred BOOLEAN NOT NULL DEFAULT false;
-        CREATE INDEX IF NOT EXISTS idx_items_starred ON items(starred);
-    END IF;
+    -- This migration is no longer needed as starred column is handled in user_progress table
+    -- No operation needed
 END $$;
 `
 

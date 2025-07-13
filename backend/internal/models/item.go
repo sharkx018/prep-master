@@ -58,11 +58,8 @@ type Item struct {
 	Link        string      `json:"link" db:"link"`
 	Category    Category    `json:"category" db:"category"`
 	Subcategory string      `json:"subcategory" db:"subcategory"`
-	Status      Status      `json:"status" db:"status"`
-	Starred     bool        `json:"starred" db:"starred"`
 	Attachments Attachments `json:"attachments" db:"attachments"`
 	CreatedAt   time.Time   `json:"created_at" db:"created_at"`
-	CompletedAt *time.Time  `json:"completed_at,omitempty" db:"completed_at"`
 }
 
 // ItemWithProgress represents an item with user-specific progress data

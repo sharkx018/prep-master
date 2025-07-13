@@ -163,12 +163,12 @@ func (s *ItemService) GetItemsPaginated(filter *models.ItemFilter) (*models.Pagi
 			Link:        item.Link,
 			Category:    item.Category,
 			Subcategory: item.Subcategory,
-			Status:      item.Status,
-			Starred:     item.Starred,
+			Status:      models.StatusPending, // Default status for non-user-specific queries
+			Starred:     false,                // Default starred for non-user-specific queries
 			Attachments: item.Attachments,
 			CreatedAt:   item.CreatedAt,
-			CompletedAt: item.CompletedAt,
-			Notes:       "", // Default empty notes for non-user-specific queries
+			CompletedAt: nil, // Default completed_at for non-user-specific queries
+			Notes:       "",  // Default empty notes for non-user-specific queries
 		}
 	}
 
@@ -178,19 +178,17 @@ func (s *ItemService) GetItemsPaginated(filter *models.ItemFilter) (*models.Pagi
 	hasNext := offset+limit < totalCount
 	hasPrev := offset > 0
 
-	pagination := models.PaginationMeta{
-		Total:      totalCount,
-		Limit:      limit,
-		Offset:     offset,
-		HasNext:    hasNext,
-		HasPrev:    hasPrev,
-		TotalPages: totalPages,
-		Page:       page,
-	}
-
 	return &models.PaginatedItemsResponse{
-		Items:      itemsWithProgress,
-		Pagination: pagination,
+		Items: itemsWithProgress,
+		Pagination: models.PaginationMeta{
+			Page:       page,
+			Limit:      limit,
+			Offset:     offset,
+			Total:      totalCount,
+			TotalPages: totalPages,
+			HasNext:    hasNext,
+			HasPrev:    hasPrev,
+		},
 	}, nil
 }
 
@@ -264,25 +262,7 @@ func (s *ItemService) GetItemsPaginatedWithUserProgress(userID int, filter *mode
 
 // GetNextItem retrieves the current in-progress item or a random pending item
 func (s *ItemService) GetNextItem() (*models.Item, error) {
-	// First check if there's already an in-progress item
-	inProgressItem, err := s.itemRepo.GetInProgressItem()
-	if err != nil {
-		return nil, fmt.Errorf("failed to check for in-progress item: %w", err)
-	}
-
-	// If there's an in-progress item, return it
-	if inProgressItem != nil {
-		return inProgressItem, nil
-	}
-
-	// Otherwise, get a random pending item
-	pendingItem, err := s.itemRepo.GetRandomPending()
-	if err != nil {
-		return nil, err
-	}
-
-	// Set it as in-progress
-	return s.itemRepo.SetInProgress(pendingItem.ID)
+	return nil, fmt.Errorf("GetNextItem is deprecated - use GetNextItemWithUserProgress instead")
 }
 
 // GetNextItemWithUserProgress retrieves the current in-progress item or a random pending item for a user
@@ -327,14 +307,7 @@ func (s *ItemService) GetNextItemWithUserProgress(userID int) (*models.ItemWithP
 
 // SkipItem moves the current in-progress item back to pending and gets a new random item
 func (s *ItemService) SkipItem() (*models.Item, error) {
-	// Get a random pending item (this will automatically reset any in-progress items)
-	pendingItem, err := s.itemRepo.GetRandomPending()
-	if err != nil {
-		return nil, err
-	}
-
-	// Set it as in-progress (this will also reset the current in-progress item to pending)
-	return s.itemRepo.SetInProgress(pendingItem.ID)
+	return nil, fmt.Errorf("SkipItem is deprecated - use SkipItemWithUserProgress instead")
 }
 
 // SkipItemWithUserProgress moves the current in-progress item back to pending and gets a new random item for a user
@@ -368,34 +341,7 @@ func (s *ItemService) SkipItemWithUserProgress(userID int) (*models.ItemWithProg
 
 // CompleteItem marks an item as completed and handles completion logic
 func (s *ItemService) CompleteItem(id int) (*models.Item, error) {
-	if id <= 0 {
-		return nil, fmt.Errorf("invalid item ID")
-	}
-
-	// Mark item as complete
-	item, err := s.itemRepo.MarkComplete(id)
-	if err != nil {
-		return nil, err
-	}
-
-	// Check if all items are now completed
-	pendingCount, err := s.itemRepo.CountPending()
-	if err != nil {
-		// Log error but don't fail the completion
-		// In a real app, you might want to use a proper logger here
-		fmt.Printf("Warning: failed to count pending items: %v\n", err)
-		return item, nil
-	}
-
-	// If all items are completed, increment the completed_all_count
-	if pendingCount == 0 {
-		if err := s.statsRepo.IncrementCompletedAllCount(); err != nil {
-			// Log error but don't fail the completion
-			fmt.Printf("Warning: failed to increment completed_all_count: %v\n", err)
-		}
-	}
-
-	return item, nil
+	return nil, fmt.Errorf("CompleteItem is deprecated - use CompleteItemWithUserProgress instead")
 }
 
 // CompleteItemWithUserProgress marks an item as completed for a specific user and handles user stats
@@ -474,7 +420,7 @@ func (s *ItemService) DeleteItem(id int) error {
 
 // ResetAllItems marks all items as pending
 func (s *ItemService) ResetAllItems() (int64, error) {
-	return s.itemRepo.ResetAll()
+	return 0, fmt.Errorf("ResetAllItems is deprecated - use ResetAllItemsWithUserProgress instead")
 }
 
 // ResetAllItemsWithUserProgress resets all user progress for a specific user back to pending
@@ -488,7 +434,7 @@ func (s *ItemService) ResetAllItemsWithUserProgress(userID int) (int64, error) {
 
 // GetItemCounts returns basic item statistics
 func (s *ItemService) GetItemCounts() (total, completed, pending int, err error) {
-	return s.itemRepo.GetCounts()
+	return 0, 0, 0, fmt.Errorf("GetItemCounts is deprecated - use GetCountsForUser instead")
 }
 
 // GetCommonSubcategories returns the list of common subcategories for a given category
@@ -507,11 +453,7 @@ func (s *ItemService) GetCommonSubcategories(category models.Category) ([]string
 
 // ToggleStar toggles the starred status of an item
 func (s *ItemService) ToggleStar(id int) (*models.Item, error) {
-	if id <= 0 {
-		return nil, fmt.Errorf("invalid item ID")
-	}
-
-	return s.itemRepo.ToggleStar(id)
+	return nil, fmt.Errorf("ToggleStar is deprecated - use ToggleStarWithUserProgress instead")
 }
 
 // ToggleStarWithUserProgress toggles the starred status of an item for a specific user
@@ -529,21 +471,7 @@ func (s *ItemService) ToggleStarWithUserProgress(userID, itemID int) (*models.It
 
 // UpdateStatus updates the status of an item
 func (s *ItemService) UpdateStatus(id int, status models.Status) (*models.Item, error) {
-	if id <= 0 {
-		return nil, fmt.Errorf("invalid item ID")
-	}
-
-	// Validate status
-	if !models.IsValidStatus(status) {
-		return nil, fmt.Errorf("invalid status: %s", status)
-	}
-
-	// Don't allow setting status to in-progress through this method
-	if status == models.StatusInProgress {
-		return nil, fmt.Errorf("cannot set status to in-progress directly")
-	}
-
-	return s.itemRepo.UpdateStatus(id, status)
+	return nil, fmt.Errorf("UpdateStatus is deprecated - use UpdateStatusWithUserProgress instead")
 }
 
 // UpdateStatusWithUserProgress updates the status of an item for a specific user
