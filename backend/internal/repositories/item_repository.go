@@ -413,10 +413,34 @@ func (r *ItemRepository) Update(id int, req *models.UpdateItemRequest) (*models.
 	return &item, nil
 }
 
-// Delete removes an item from the database
+// Delete removes an item from the database and cascades to user_progress
 func (r *ItemRepository) Delete(id int) error {
-	query := "DELETE FROM items WHERE id = $1"
-	result, err := r.db.Exec(query, id)
+	// Start a transaction to ensure atomicity
+	tx, err := r.db.Begin()
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	// First, check if the item exists
+	var exists bool
+	err = tx.QueryRow("SELECT EXISTS(SELECT 1 FROM items WHERE id = $1)", id).Scan(&exists)
+	if err != nil {
+		return fmt.Errorf("failed to check if item exists: %w", err)
+	}
+	if !exists {
+		return fmt.Errorf("item not found")
+	}
+
+	// Delete user progress entries for this item (optional since CASCADE will handle this)
+	// This is explicit for clarity and potential logging
+	_, err = tx.Exec("DELETE FROM user_progress WHERE item_id = $1", id)
+	if err != nil {
+		return fmt.Errorf("failed to delete user progress entries: %w", err)
+	}
+
+	// Delete the item (this would also cascade delete user_progress due to FK constraint)
+	result, err := tx.Exec("DELETE FROM items WHERE id = $1", id)
 	if err != nil {
 		return fmt.Errorf("failed to delete item: %w", err)
 	}
@@ -428,6 +452,11 @@ func (r *ItemRepository) Delete(id int) error {
 
 	if rowsAffected == 0 {
 		return fmt.Errorf("item not found")
+	}
+
+	// Commit the transaction
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
 	return nil
