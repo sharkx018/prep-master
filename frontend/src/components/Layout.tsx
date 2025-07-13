@@ -25,14 +25,14 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const location = useLocation();
-  const { user, logout } = useAuth();
+  const { user, logout, isAdmin } = useAuth();
   const { isDarkMode, toggleTheme } = useTheme();
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Items', href: '/items', icon: List },
     { name: 'Study', href: '/study', icon: BookOpen },
-    { name: 'Add Item', href: '/add-item', icon: Plus },
+    ...(isAdmin ? [{ name: 'Add Item', href: '/add-item', icon: Plus }] : []),
     { name: 'Statistics', href: '/stats', icon: BarChart3 },
   ];
 

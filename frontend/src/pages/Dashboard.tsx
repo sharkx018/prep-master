@@ -19,7 +19,7 @@ import { statsApi, itemsApi, Stats } from '../services/api';
 
 const Dashboard: React.FC = () => {
   const { isDarkMode } = useTheme();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -290,7 +290,7 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className={`grid grid-cols-1 gap-6 ${isAdmin ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
         <Link
           to="/study"
           className="group bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl shadow-lg p-6 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 text-white"
@@ -308,32 +308,34 @@ const Dashboard: React.FC = () => {
           </div>
         </Link>
 
-        <Link
-          to="/add-item"
-          className={`group rounded-xl shadow-lg p-6 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 border-2 border-transparent ${
-            isDarkMode 
-              ? 'bg-gray-800 hover:border-indigo-500' 
-              : 'bg-white hover:border-indigo-200'
-          }`}
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className={`text-lg font-bold group-hover:text-indigo-600 transition-colors ${
-                isDarkMode ? 'text-gray-100' : 'text-gray-900'
-              }`}>Add New Item</h3>
-              <p className={`mt-1 text-sm ${
-                isDarkMode ? 'text-gray-400' : 'text-gray-600'
+        {isAdmin && (
+          <Link
+            to="/add-item"
+            className={`group rounded-xl shadow-lg p-6 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 border-2 border-transparent ${
+              isDarkMode 
+                ? 'bg-gray-800 hover:border-indigo-500' 
+                : 'bg-white hover:border-indigo-200'
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className={`text-lg font-bold group-hover:text-indigo-600 transition-colors ${
+                  isDarkMode ? 'text-gray-100' : 'text-gray-900'
+                }`}>Add New Item</h3>
+                <p className={`mt-1 text-sm ${
+                  isDarkMode ? 'text-gray-400' : 'text-gray-600'
+                }`}>
+                  Add a new problem or article
+                </p>
+              </div>
+              <div className={`rounded-full p-2 group-hover:bg-indigo-100 transition-colors ${
+                isDarkMode ? 'bg-indigo-900/30' : 'bg-indigo-50'
               }`}>
-                Add a new problem or article
-              </p>
+                <ArrowRight className="h-5 w-5 text-indigo-600 group-hover:translate-x-1 transition-transform" />
+              </div>
             </div>
-            <div className={`rounded-full p-2 group-hover:bg-indigo-100 transition-colors ${
-              isDarkMode ? 'bg-indigo-900/30' : 'bg-indigo-50'
-            }`}>
-              <ArrowRight className="h-5 w-5 text-indigo-600 group-hover:translate-x-1 transition-transform" />
-            </div>
-          </div>
-        </Link>
+          </Link>
+        )}
 
         <Link
           to="/items"

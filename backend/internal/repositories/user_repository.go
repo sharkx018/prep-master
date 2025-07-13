@@ -20,8 +20,8 @@ func NewUserRepository(db *sql.DB) *UserRepository {
 // Create creates a new user
 func (r *UserRepository) Create(user *models.User) error {
 	query := `
-		INSERT INTO users (email, name, avatar, auth_provider, provider_id, password_hash, is_active, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		INSERT INTO users (email, name, avatar, role, auth_provider, provider_id, password_hash, is_active, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 		RETURNING id, created_at, updated_at
 	`
 
@@ -29,6 +29,11 @@ func (r *UserRepository) Create(user *models.User) error {
 	user.CreatedAt = now
 	user.UpdatedAt = now
 	user.IsActive = true
+
+	// Set default role if not specified
+	if user.Role == "" {
+		user.Role = models.RoleUser
+	}
 
 	// Handle empty provider_id as NULL for email users
 	var providerID interface{}
@@ -43,6 +48,7 @@ func (r *UserRepository) Create(user *models.User) error {
 		user.Email,
 		user.Name,
 		user.Avatar,
+		user.Role,
 		user.AuthProvider,
 		providerID,
 		user.PasswordHash,
@@ -61,7 +67,7 @@ func (r *UserRepository) Create(user *models.User) error {
 // GetByID retrieves a user by ID
 func (r *UserRepository) GetByID(id int) (*models.User, error) {
 	query := `
-		SELECT id, email, name, avatar, auth_provider, provider_id, password_hash, is_active, created_at, updated_at, last_login_at
+		SELECT id, email, name, avatar, role, auth_provider, provider_id, password_hash, is_active, created_at, updated_at, last_login_at
 		FROM users
 		WHERE id = $1 AND is_active = true
 	`
@@ -75,6 +81,7 @@ func (r *UserRepository) GetByID(id int) (*models.User, error) {
 		&user.Email,
 		&user.Name,
 		&user.Avatar,
+		&user.Role,
 		&user.AuthProvider,
 		&providerID,
 		&user.PasswordHash,
@@ -105,7 +112,7 @@ func (r *UserRepository) GetByID(id int) (*models.User, error) {
 // GetByEmail retrieves a user by email
 func (r *UserRepository) GetByEmail(email string) (*models.User, error) {
 	query := `
-		SELECT id, email, name, avatar, auth_provider, provider_id, password_hash, is_active, created_at, updated_at, last_login_at
+		SELECT id, email, name, avatar, role, auth_provider, provider_id, password_hash, is_active, created_at, updated_at, last_login_at
 		FROM users
 		WHERE email = $1 AND is_active = true
 	`
@@ -119,6 +126,7 @@ func (r *UserRepository) GetByEmail(email string) (*models.User, error) {
 		&user.Email,
 		&user.Name,
 		&user.Avatar,
+		&user.Role,
 		&user.AuthProvider,
 		&providerID,
 		&user.PasswordHash,
@@ -149,7 +157,7 @@ func (r *UserRepository) GetByEmail(email string) (*models.User, error) {
 // GetByProviderID retrieves a user by provider and provider ID
 func (r *UserRepository) GetByProviderID(provider models.AuthProvider, providerID string) (*models.User, error) {
 	query := `
-		SELECT id, email, name, avatar, auth_provider, provider_id, password_hash, is_active, created_at, updated_at, last_login_at
+		SELECT id, email, name, avatar, role, auth_provider, provider_id, password_hash, is_active, created_at, updated_at, last_login_at
 		FROM users
 		WHERE auth_provider = $1 AND provider_id = $2 AND is_active = true
 	`
@@ -163,6 +171,7 @@ func (r *UserRepository) GetByProviderID(provider models.AuthProvider, providerI
 		&user.Email,
 		&user.Name,
 		&user.Avatar,
+		&user.Role,
 		&user.AuthProvider,
 		&providerIDResult,
 		&user.PasswordHash,

@@ -46,7 +46,7 @@ func main() {
 	userService := services.NewUserService(userRepo)
 
 	// Initialize handlers
-	itemHandler := handlers.NewItemHandler(itemService)
+	itemHandler := handlers.NewItemHandler(itemService, userService)
 	statsHandler := handlers.NewStatsHandler(statsService)
 	authHandler := handlers.NewAuthHandler(cfg, userService)
 

@@ -48,6 +48,7 @@ func (s *UserService) RegisterWithEmail(req *models.CreateUserRequest) (*models.
 		Email:        req.Email,
 		Name:         req.Name,
 		Avatar:       req.Avatar,
+		Role:         models.RoleUser, // Default role for new users
 		AuthProvider: models.AuthProviderEmail,
 		ProviderID:   "", // Empty string for email users - will be handled as NULL in DB
 		PasswordHash: hashedPassword,
@@ -120,6 +121,7 @@ func (s *UserService) LoginWithOAuth(req *models.OAuthLoginRequest) (*models.Use
 		Email:        userInfo.Email,
 		Name:         userInfo.Name,
 		Avatar:       userInfo.Avatar,
+		Role:         models.RoleUser, // Default role for new users
 		AuthProvider: req.Provider,
 		ProviderID:   userInfo.ProviderID,
 	}

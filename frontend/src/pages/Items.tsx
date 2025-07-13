@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
+import { useAuth } from '../contexts/AuthContext';
 import { 
   ExternalLink, 
   CheckCircle, 
@@ -19,6 +20,7 @@ import { itemsApi, Item, UpdateItemRequest, PaginationMeta } from '../services/a
 
 const Items: React.FC = () => {
   const { isDarkMode } = useTheme();
+  const { isAdmin } = useAuth();
   const [items, setItems] = useState<Item[]>([]);
   const [pagination, setPagination] = useState<PaginationMeta>({
     total: 0,
@@ -468,7 +470,7 @@ const Items: React.FC = () => {
               <li key={item.id} className={`px-6 py-4 ${
                 isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'
               }`}>
-                {editingId === item.id ? (
+                {editingId === item.id && isAdmin ? (
                   // Edit mode
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -635,16 +637,18 @@ const Items: React.FC = () => {
                       {renderAttachments(item.attachments)}
                     </div>
                     <div className="flex items-center space-x-2 ml-4">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEditClick(item);
-                        }}
-                        className="p-2 text-gray-400 hover:text-indigo-600"
-                        title="Edit item"
-                      >
-                        <Edit2 className="h-5 w-5" />
-                      </button>
+                      {isAdmin && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditClick(item);
+                          }}
+                          className="p-2 text-gray-400 hover:text-indigo-600"
+                          title="Edit item"
+                        >
+                          <Edit2 className="h-5 w-5" />
+                        </button>
+                      )}
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -693,21 +697,23 @@ const Items: React.FC = () => {
                           <CheckCircle className="h-5 w-5" />
                         )}
                       </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDelete(item.id);
-                        }}
-                        disabled={deleting === item.id}
-                        className="p-2 text-gray-400 hover:text-red-600 disabled:opacity-50"
-                        title="Delete item"
-                      >
-                        {deleting === item.id ? (
-                          <Loader2 className="h-5 w-5 animate-spin" />
-                        ) : (
-                          <Trash2 className="h-5 w-5" />
-                        )}
-                      </button>
+                      {isAdmin && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(item.id);
+                          }}
+                          disabled={deleting === item.id}
+                          className="p-2 text-gray-400 hover:text-red-600 disabled:opacity-50"
+                          title="Delete item"
+                        >
+                          {deleting === item.id ? (
+                            <Loader2 className="h-5 w-5 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-5 w-5" />
+                          )}
+                        </button>
+                      )}
                     </div>
                   </div>
                 )}

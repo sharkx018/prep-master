@@ -5,6 +5,7 @@ interface User {
   email: string;
   name: string;
   avatar?: string;
+  role: 'user' | 'admin';
   auth_provider: 'email' | 'google' | 'facebook' | 'apple';
   created_at: string;
   last_login_at?: string;
@@ -20,6 +21,7 @@ interface AuthContextType {
   logout: () => void;
   isAuthenticated: boolean;
   isLoading: boolean;
+  isAdmin: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -300,6 +302,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     logout,
     isAuthenticated: !!user,
     isLoading,
+    isAdmin: user?.role === 'admin',
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

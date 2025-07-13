@@ -13,15 +13,25 @@ import (
 // ItemHandler handles HTTP requests for items
 type ItemHandler struct {
 	itemService *services.ItemService
+	userService *services.UserService
 }
 
 // NewItemHandler creates a new item handler
-func NewItemHandler(itemService *services.ItemService) *ItemHandler {
-	return &ItemHandler{itemService: itemService}
+func NewItemHandler(itemService *services.ItemService, userService *services.UserService) *ItemHandler {
+	return &ItemHandler{
+		itemService: itemService,
+		userService: userService,
+	}
 }
 
-// CreateItem handles POST /items
+// CreateItem handles POST /items - Admin only
 func (h *ItemHandler) CreateItem(c *gin.Context) {
+	// Check if user has admin role
+	if err := h.requireAdminRole(c); err != nil {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Admin access required to create items"})
+		return
+	}
+
 	var req models.CreateItemRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -35,6 +45,25 @@ func (h *ItemHandler) CreateItem(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, item)
+}
+
+// requireAdminRole checks if the current user has admin role
+func (h *ItemHandler) requireAdminRole(c *gin.Context) error {
+	userID, exists := c.Get("userID")
+	if !exists {
+		return gin.Error{Err: gin.Error{}, Type: gin.ErrorTypePublic, Meta: "User not authenticated"}
+	}
+
+	user, err := h.userService.GetByID(userID.(int))
+	if err != nil {
+		return err
+	}
+
+	if user.Role != models.RoleAdmin {
+		return gin.Error{Err: gin.Error{}, Type: gin.ErrorTypePublic, Meta: "Admin role required"}
+	}
+
+	return nil
 }
 
 // GetItem handles GET /items/:id
@@ -203,8 +232,14 @@ func (h *ItemHandler) CompleteItem(c *gin.Context) {
 	c.JSON(http.StatusOK, item)
 }
 
-// UpdateItem handles PUT /items/:id
+// UpdateItem handles PUT /items/:id - Admin only
 func (h *ItemHandler) UpdateItem(c *gin.Context) {
+	// Check if user has admin role
+	if err := h.requireAdminRole(c); err != nil {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Admin access required to edit items"})
+		return
+	}
+
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
@@ -231,8 +266,14 @@ func (h *ItemHandler) UpdateItem(c *gin.Context) {
 	c.JSON(http.StatusOK, item)
 }
 
-// DeleteItem handles DELETE /items/:id
+// DeleteItem handles DELETE /items/:id - Admin only
 func (h *ItemHandler) DeleteItem(c *gin.Context) {
+	// Check if user has admin role
+	if err := h.requireAdminRole(c); err != nil {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Admin access required to delete items"})
+		return
+	}
+
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {

@@ -14,12 +14,21 @@ const (
 	AuthProviderApple    AuthProvider = "apple"
 )
 
+// Role represents user roles in the system
+type Role string
+
+const (
+	RoleUser  Role = "user"
+	RoleAdmin Role = "admin"
+)
+
 // User represents a user in the system
 type User struct {
 	ID           int          `json:"id" db:"id"`
 	Email        string       `json:"email" db:"email"`
 	Name         string       `json:"name" db:"name"`
 	Avatar       string       `json:"avatar,omitempty" db:"avatar"`
+	Role         Role         `json:"role" db:"role"`
 	AuthProvider AuthProvider `json:"auth_provider" db:"auth_provider"`
 	ProviderID   string       `json:"provider_id,omitempty" db:"provider_id"`
 	PasswordHash string       `json:"-" db:"password_hash"` // Never include in JSON

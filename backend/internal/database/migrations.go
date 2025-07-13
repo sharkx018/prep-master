@@ -21,6 +21,7 @@ func RunMigrations(db *sql.DB) error {
 		createUserStatsTable,
 		createRefreshTokensTable,
 		fixUsersUniqueConstraint,
+		addUserRoleColumn,
 	}
 
 	for i, migration := range migrations {
@@ -205,4 +206,15 @@ ALTER TABLE users DROP CONSTRAINT IF EXISTS users_auth_provider_provider_id_key;
 
 -- Create partial unique index for OAuth providers only (when provider_id is not null)
 CREATE UNIQUE INDEX IF NOT EXISTS idx_users_oauth_unique ON users(auth_provider, provider_id) WHERE provider_id IS NOT NULL;
+`
+
+const addUserRoleColumn = `
+DO $$ 
+BEGIN 
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name='users' AND column_name='role') THEN
+        ALTER TABLE users ADD COLUMN role VARCHAR(20) NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'admin'));
+        CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
+    END IF;
+END $$;
 `
