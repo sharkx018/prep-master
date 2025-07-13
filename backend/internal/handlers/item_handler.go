@@ -68,6 +68,13 @@ func (h *ItemHandler) requireAdminRole(c *gin.Context) error {
 
 // GetItem handles GET /items/:id
 func (h *ItemHandler) GetItem(c *gin.Context) {
+	// Get user ID from context
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
@@ -75,7 +82,8 @@ func (h *ItemHandler) GetItem(c *gin.Context) {
 		return
 	}
 
-	item, err := h.itemService.GetItem(id)
+	// Use the new method that includes user progress
+	item, err := h.itemService.GetItemWithUserProgress(userID.(int), id)
 	if err != nil {
 		if err.Error() == "item not found" {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Item not found"})
@@ -90,6 +98,13 @@ func (h *ItemHandler) GetItem(c *gin.Context) {
 
 // GetItems handles GET /items
 func (h *ItemHandler) GetItems(c *gin.Context) {
+	// Get user ID from context
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
 	filter := &models.ItemFilter{}
 
 	// Parse query parameters
@@ -125,7 +140,8 @@ func (h *ItemHandler) GetItems(c *gin.Context) {
 		filter.Offset = &offset
 	}
 
-	items, err := h.itemService.GetItems(filter)
+	// Use the new method that includes user progress
+	items, err := h.itemService.GetItemsWithUserProgress(userID.(int), filter)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -136,6 +152,13 @@ func (h *ItemHandler) GetItems(c *gin.Context) {
 
 // GetItemsPaginated handles GET /items/paginated
 func (h *ItemHandler) GetItemsPaginated(c *gin.Context) {
+	// Get user ID from context
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
 	filter := &models.ItemFilter{}
 
 	// Parse query parameters
@@ -171,7 +194,8 @@ func (h *ItemHandler) GetItemsPaginated(c *gin.Context) {
 		filter.Offset = &offset
 	}
 
-	result, err := h.itemService.GetItemsPaginated(filter)
+	// Use the new method that includes user progress
+	result, err := h.itemService.GetItemsPaginatedWithUserProgress(userID.(int), filter)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -182,7 +206,15 @@ func (h *ItemHandler) GetItemsPaginated(c *gin.Context) {
 
 // GetNextItem handles GET /items/next
 func (h *ItemHandler) GetNextItem(c *gin.Context) {
-	item, err := h.itemService.GetNextItem()
+	// Get user ID from context
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	// Use the new method that includes user progress
+	item, err := h.itemService.GetNextItemWithUserProgress(userID.(int))
 	if err != nil {
 		if err.Error() == "no pending items found" {
 			c.JSON(http.StatusNotFound, gin.H{"message": "No pending items found"})
@@ -197,7 +229,15 @@ func (h *ItemHandler) GetNextItem(c *gin.Context) {
 
 // SkipItem handles POST /items/skip
 func (h *ItemHandler) SkipItem(c *gin.Context) {
-	item, err := h.itemService.SkipItem()
+	// Get user ID from context
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	// Use the new method that includes user progress
+	item, err := h.itemService.SkipItemWithUserProgress(userID.(int))
 	if err != nil {
 		if err.Error() == "no pending items found" {
 			c.JSON(http.StatusNotFound, gin.H{"message": "No pending items found"})

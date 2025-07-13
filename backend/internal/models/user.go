@@ -84,6 +84,7 @@ type UserProgress struct {
 	UserID      int        `json:"user_id" db:"user_id"`
 	ItemID      int        `json:"item_id" db:"item_id"`
 	Status      Status     `json:"status" db:"status"`
+	Starred     bool       `json:"starred" db:"starred"`
 	Notes       string     `json:"notes,omitempty" db:"notes"`
 	StartedAt   time.Time  `json:"started_at" db:"started_at"`
 	CompletedAt *time.Time `json:"completed_at,omitempty" db:"completed_at"`
@@ -99,4 +100,22 @@ type RefreshToken struct {
 	ExpiresAt time.Time `json:"expires_at" db:"expires_at"`
 	CreatedAt time.Time `json:"created_at" db:"created_at"`
 	IsRevoked bool      `json:"is_revoked" db:"is_revoked"`
+}
+
+// UserStats represents user-specific statistics
+type UserStats struct {
+	UserID            int        `json:"user_id" db:"user_id"`
+	TotalItems        int        `json:"total_items" db:"total_items"`
+	CompletedItems    int        `json:"completed_items" db:"completed_items"`
+	InProgressItems   int        `json:"in_progress_items" db:"in_progress_items"`
+	PendingItems      int        `json:"pending_items" db:"pending_items"`
+	DSACompleted      int        `json:"dsa_completed" db:"dsa_completed"`
+	LLDCompleted      int        `json:"lld_completed" db:"lld_completed"`
+	HLDCompleted      int        `json:"hld_completed" db:"hld_completed"`
+	CompletedAllCount int        `json:"completed_all_count" db:"completed_all_count"`
+	CurrentStreak     int        `json:"current_streak" db:"current_streak"`
+	LongestStreak     int        `json:"longest_streak" db:"longest_streak"`
+	LastActivityDate  *time.Time `json:"last_activity_date,omitempty" db:"last_activity_date"`
+	CreatedAt         time.Time  `json:"created_at" db:"created_at"`
+	UpdatedAt         time.Time  `json:"updated_at" db:"updated_at"`
 }

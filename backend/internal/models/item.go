@@ -65,6 +65,21 @@ type Item struct {
 	CompletedAt *time.Time  `json:"completed_at,omitempty" db:"completed_at"`
 }
 
+// ItemWithProgress represents an item with user-specific progress data
+type ItemWithProgress struct {
+	ID          int         `json:"id" db:"id"`
+	Title       string      `json:"title" db:"title"`
+	Link        string      `json:"link" db:"link"`
+	Category    Category    `json:"category" db:"category"`
+	Subcategory string      `json:"subcategory" db:"subcategory"`
+	Status      Status      `json:"status" db:"status"`
+	Starred     bool        `json:"starred" db:"starred"`
+	Attachments Attachments `json:"attachments" db:"attachments"`
+	CreatedAt   time.Time   `json:"created_at" db:"created_at"`
+	CompletedAt *time.Time  `json:"completed_at,omitempty" db:"completed_at"`
+	Notes       string      `json:"notes,omitempty" db:"notes"`
+}
+
 // CreateItemRequest represents the request payload for creating an item
 type CreateItemRequest struct {
 	Title       string      `json:"title" binding:"required"`
@@ -94,8 +109,8 @@ type ItemFilter struct {
 
 // PaginatedItemsResponse represents a paginated response for items
 type PaginatedItemsResponse struct {
-	Items      []*Item        `json:"items"`
-	Pagination PaginationMeta `json:"pagination"`
+	Items      []*ItemWithProgress `json:"items"`
+	Pagination PaginationMeta      `json:"pagination"`
 }
 
 // PaginationMeta contains pagination metadata

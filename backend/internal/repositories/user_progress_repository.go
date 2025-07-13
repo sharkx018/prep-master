@@ -20,8 +20,8 @@ func NewUserProgressRepository(db *sql.DB) *UserProgressRepository {
 // Create creates a new user progress record
 func (r *UserProgressRepository) Create(progress *models.UserProgress) error {
 	query := `
-		INSERT INTO user_progress (user_id, item_id, status, notes, started_at, completed_at, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		INSERT INTO user_progress (user_id, item_id, status, starred, notes, started_at, completed_at, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 		RETURNING id, created_at, updated_at
 	`
 
@@ -34,6 +34,7 @@ func (r *UserProgressRepository) Create(progress *models.UserProgress) error {
 		progress.UserID,
 		progress.ItemID,
 		progress.Status,
+		progress.Starred,
 		progress.Notes,
 		progress.StartedAt,
 		progress.CompletedAt,
@@ -51,7 +52,7 @@ func (r *UserProgressRepository) Create(progress *models.UserProgress) error {
 // GetByUserAndItem retrieves user progress for a specific user and item
 func (r *UserProgressRepository) GetByUserAndItem(userID, itemID int) (*models.UserProgress, error) {
 	query := `
-		SELECT id, user_id, item_id, status, notes, started_at, completed_at, created_at, updated_at
+		SELECT id, user_id, item_id, status, starred, notes, started_at, completed_at, created_at, updated_at
 		FROM user_progress
 		WHERE user_id = $1 AND item_id = $2
 	`
@@ -62,6 +63,7 @@ func (r *UserProgressRepository) GetByUserAndItem(userID, itemID int) (*models.U
 		&progress.UserID,
 		&progress.ItemID,
 		&progress.Status,
+		&progress.Starred,
 		&progress.Notes,
 		&progress.StartedAt,
 		&progress.CompletedAt,
@@ -83,8 +85,8 @@ func (r *UserProgressRepository) GetByUserAndItem(userID, itemID int) (*models.U
 func (r *UserProgressRepository) Update(progress *models.UserProgress) error {
 	query := `
 		UPDATE user_progress
-		SET status = $1, notes = $2, started_at = $3, completed_at = $4, updated_at = $5
-		WHERE id = $6
+		SET status = $1, starred = $2, notes = $3, started_at = $4, completed_at = $5, updated_at = $6
+		WHERE id = $7
 	`
 
 	progress.UpdatedAt = time.Now()
@@ -92,6 +94,7 @@ func (r *UserProgressRepository) Update(progress *models.UserProgress) error {
 	_, err := r.db.Exec(
 		query,
 		progress.Status,
+		progress.Starred,
 		progress.Notes,
 		progress.StartedAt,
 		progress.CompletedAt,
@@ -109,7 +112,7 @@ func (r *UserProgressRepository) Update(progress *models.UserProgress) error {
 // GetByUserID retrieves all progress records for a user
 func (r *UserProgressRepository) GetByUserID(userID int) ([]*models.UserProgress, error) {
 	query := `
-		SELECT id, user_id, item_id, status, notes, started_at, completed_at, created_at, updated_at
+		SELECT id, user_id, item_id, status, starred, notes, started_at, completed_at, created_at, updated_at
 		FROM user_progress
 		WHERE user_id = $1
 		ORDER BY created_at DESC
@@ -129,6 +132,7 @@ func (r *UserProgressRepository) GetByUserID(userID int) ([]*models.UserProgress
 			&progress.UserID,
 			&progress.ItemID,
 			&progress.Status,
+			&progress.Starred,
 			&progress.Notes,
 			&progress.StartedAt,
 			&progress.CompletedAt,

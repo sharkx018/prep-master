@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"strings"
+	"time"
 
 	"interview-prep-app/internal/models"
 )
@@ -67,6 +68,37 @@ func (r *ItemRepository) GetByID(id int) (*models.Item, error) {
 	return &item, nil
 }
 
+// GetByIDWithUserProgress retrieves an item by its ID with user-specific progress data
+func (r *ItemRepository) GetByIDWithUserProgress(userID, itemID int) (*models.ItemWithProgress, error) {
+	query := `
+		SELECT 
+			i.id, i.title, i.link, i.category, i.subcategory, i.attachments, i.created_at,
+			COALESCE(up.status, 'pending') as status,
+			COALESCE(up.starred, false) as starred,
+			COALESCE(up.notes, '') as notes,
+			up.completed_at
+		FROM items i
+		LEFT JOIN user_progress up 
+			ON i.id = up.item_id AND up.user_id = $1
+		WHERE i.id = $2`
+
+	var item models.ItemWithProgress
+	err := r.db.QueryRow(query, userID, itemID).Scan(
+		&item.ID, &item.Title, &item.Link, &item.Category, &item.Subcategory,
+		&item.Attachments, &item.CreatedAt, &item.Status, &item.Starred,
+		&item.Notes, &item.CompletedAt,
+	)
+
+	if err == sql.ErrNoRows {
+		return nil, fmt.Errorf("item not found")
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to get item with user progress: %w", err)
+	}
+
+	return &item, nil
+}
+
 // GetAll retrieves items with optional filtering
 func (r *ItemRepository) GetAll(filter *models.ItemFilter) ([]*models.Item, error) {
 	query := "SELECT id, title, link, category, subcategory, status, starred, attachments, created_at, completed_at FROM items WHERE 1=1"
@@ -98,17 +130,17 @@ func (r *ItemRepository) GetAll(filter *models.ItemFilter) ([]*models.Item, erro
 		argCount++
 		query += fmt.Sprintf(" LIMIT $%d", argCount)
 		args = append(args, *filter.Limit)
-	}
 
-	if filter.Offset != nil {
-		argCount++
-		query += fmt.Sprintf(" OFFSET $%d", argCount)
-		args = append(args, *filter.Offset)
+		if filter.Offset != nil {
+			argCount++
+			query += fmt.Sprintf(" OFFSET $%d", argCount)
+			args = append(args, *filter.Offset)
+		}
 	}
 
 	rows, err := r.db.Query(query, args...)
 	if err != nil {
-		return nil, fmt.Errorf("failed to query items: %w", err)
+		return nil, fmt.Errorf("failed to get items: %w", err)
 	}
 	defer rows.Close()
 
@@ -125,8 +157,77 @@ func (r *ItemRepository) GetAll(filter *models.ItemFilter) ([]*models.Item, erro
 		items = append(items, &item)
 	}
 
-	if err = rows.Err(); err != nil {
-		return nil, fmt.Errorf("error iterating rows: %w", err)
+	return items, nil
+}
+
+// GetAllWithUserProgress retrieves items with user-specific progress data using LEFT JOIN
+func (r *ItemRepository) GetAllWithUserProgress(userID int, filter *models.ItemFilter) ([]*models.ItemWithProgress, error) {
+	query := `
+		SELECT 
+			i.id, i.title, i.link, i.category, i.subcategory, i.attachments, i.created_at,
+			COALESCE(up.status, 'pending') as status,
+			COALESCE(up.starred, false) as starred,
+			COALESCE(up.notes, '') as notes,
+			up.completed_at
+		FROM items i
+		LEFT JOIN user_progress up 
+			ON i.id = up.item_id AND up.user_id = $1
+		WHERE 1=1`
+
+	args := []interface{}{userID}
+	argCount := 1
+
+	// Build dynamic query based on filters
+	if filter.Category != nil {
+		argCount++
+		query += fmt.Sprintf(" AND i.category = $%d", argCount)
+		args = append(args, *filter.Category)
+	}
+
+	if filter.Subcategory != nil {
+		argCount++
+		query += fmt.Sprintf(" AND i.subcategory = $%d", argCount)
+		args = append(args, *filter.Subcategory)
+	}
+
+	if filter.Status != nil {
+		argCount++
+		query += fmt.Sprintf(" AND COALESCE(up.status, 'pending') = $%d", argCount)
+		args = append(args, *filter.Status)
+	}
+
+	query += " ORDER BY i.created_at DESC"
+
+	if filter.Limit != nil {
+		argCount++
+		query += fmt.Sprintf(" LIMIT $%d", argCount)
+		args = append(args, *filter.Limit)
+
+		if filter.Offset != nil {
+			argCount++
+			query += fmt.Sprintf(" OFFSET $%d", argCount)
+			args = append(args, *filter.Offset)
+		}
+	}
+
+	rows, err := r.db.Query(query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get items with user progress: %w", err)
+	}
+	defer rows.Close()
+
+	var items []*models.ItemWithProgress
+	for rows.Next() {
+		var item models.ItemWithProgress
+		err := rows.Scan(
+			&item.ID, &item.Title, &item.Link, &item.Category, &item.Subcategory,
+			&item.Attachments, &item.CreatedAt, &item.Status, &item.Starred,
+			&item.Notes, &item.CompletedAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan item with progress: %w", err)
+		}
+		items = append(items, &item)
 	}
 
 	return items, nil
@@ -517,7 +618,7 @@ func (r *ItemRepository) UpdateStatus(id int, status models.Status) (*models.Ite
 	return &item, nil
 }
 
-// GetTotalCount returns the total count of items matching the given filters
+// GetTotalCount returns the total count of items matching the filter
 func (r *ItemRepository) GetTotalCount(filter *models.ItemFilter) (int, error) {
 	query := "SELECT COUNT(*) FROM items WHERE 1=1"
 	args := []interface{}{}
@@ -548,4 +649,192 @@ func (r *ItemRepository) GetTotalCount(filter *models.ItemFilter) (int, error) {
 		return 0, fmt.Errorf("failed to count items: %w", err)
 	}
 	return count, nil
+}
+
+// GetTotalCountWithUserProgress returns the total count of items matching the filter with user-specific progress
+func (r *ItemRepository) GetTotalCountWithUserProgress(userID int, filter *models.ItemFilter) (int, error) {
+	query := `
+		SELECT COUNT(*) 
+		FROM items i
+		LEFT JOIN user_progress up ON i.id = up.item_id AND up.user_id = $1
+		WHERE 1=1`
+
+	args := []interface{}{userID}
+	argCount := 1
+
+	// Build dynamic query based on filters
+	if filter.Category != nil {
+		argCount++
+		query += fmt.Sprintf(" AND i.category = $%d", argCount)
+		args = append(args, *filter.Category)
+	}
+
+	if filter.Subcategory != nil {
+		argCount++
+		query += fmt.Sprintf(" AND i.subcategory = $%d", argCount)
+		args = append(args, *filter.Subcategory)
+	}
+
+	if filter.Status != nil {
+		argCount++
+		query += fmt.Sprintf(" AND COALESCE(up.status, 'pending') = $%d", argCount)
+		args = append(args, *filter.Status)
+	}
+
+	var count int
+	err := r.db.QueryRow(query, args...).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count items with user progress: %w", err)
+	}
+	return count, nil
+}
+
+// GetInProgressItemWithUserProgress retrieves the current in-progress item for a user
+func (r *ItemRepository) GetInProgressItemWithUserProgress(userID int) (*models.ItemWithProgress, error) {
+	query := `
+		SELECT 
+			i.id, i.title, i.link, i.category, i.subcategory, i.attachments, i.created_at,
+			up.status, up.starred, up.notes, up.completed_at
+		FROM items i
+		INNER JOIN user_progress up ON i.id = up.item_id AND up.user_id = $1
+		WHERE up.status = 'in-progress'
+		LIMIT 1`
+
+	var item models.ItemWithProgress
+	err := r.db.QueryRow(query, userID).Scan(
+		&item.ID, &item.Title, &item.Link, &item.Category, &item.Subcategory,
+		&item.Attachments, &item.CreatedAt, &item.Status, &item.Starred,
+		&item.Notes, &item.CompletedAt,
+	)
+
+	if err == sql.ErrNoRows {
+		return nil, nil // No in-progress item
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to get in-progress item with user progress: %w", err)
+	}
+
+	return &item, nil
+}
+
+// GetRandomPendingWithUserProgress retrieves a random pending item for a user
+func (r *ItemRepository) GetRandomPendingWithUserProgress(userID int) (*models.ItemWithProgress, error) {
+	query := `
+		SELECT 
+			i.id, i.title, i.link, i.category, i.subcategory, i.attachments, i.created_at,
+			COALESCE(up.status, 'pending') as status,
+			COALESCE(up.starred, false) as starred,
+			COALESCE(up.notes, '') as notes,
+			up.completed_at
+		FROM items i
+		LEFT JOIN user_progress up 
+			ON i.id = up.item_id AND up.user_id = $1
+		WHERE COALESCE(up.status, 'pending') = 'pending'
+		ORDER BY RANDOM() 
+		LIMIT 1`
+
+	var item models.ItemWithProgress
+	err := r.db.QueryRow(query, userID).Scan(
+		&item.ID, &item.Title, &item.Link, &item.Category, &item.Subcategory,
+		&item.Attachments, &item.CreatedAt, &item.Status, &item.Starred,
+		&item.Notes, &item.CompletedAt,
+	)
+
+	if err == sql.ErrNoRows {
+		return nil, fmt.Errorf("no pending items found")
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to get random pending item with user progress: %w", err)
+	}
+
+	return &item, nil
+}
+
+// CreateUserProgressForItem creates or updates a user progress record for an item
+func (r *ItemRepository) CreateUserProgressForItem(userID, itemID int, status models.Status) error {
+	now := time.Now()
+
+	query := `
+		INSERT INTO user_progress (user_id, item_id, status, starred, notes, started_at, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		ON CONFLICT (user_id, item_id) 
+		DO UPDATE SET 
+			status = EXCLUDED.status,
+			started_at = CASE 
+				WHEN EXCLUDED.status = 'in-progress' THEN EXCLUDED.started_at
+				ELSE user_progress.started_at
+			END,
+			updated_at = EXCLUDED.updated_at`
+
+	_, err := r.db.Exec(
+		query,
+		userID,
+		itemID,
+		status,
+		false, // starred defaults to false for new records
+		"",    // notes defaults to empty for new records
+		now,   // started_at
+		now,   // created_at
+		now,   // updated_at
+	)
+
+	if err != nil {
+		return fmt.Errorf("failed to create/update user progress for item: %w", err)
+	}
+
+	return nil
+}
+
+// UpsertUserProgressForItem creates or updates a user progress record preserving existing data
+func (r *ItemRepository) UpsertUserProgressForItem(userID, itemID int, status models.Status) error {
+	now := time.Now()
+
+	query := `
+		INSERT INTO user_progress (user_id, item_id, status, starred, notes, started_at, created_at, updated_at)
+		VALUES ($1, $2, $3, false, '', $4, $5, $6)
+		ON CONFLICT (user_id, item_id) 
+		DO UPDATE SET 
+			status = EXCLUDED.status,
+			started_at = CASE 
+				WHEN EXCLUDED.status = 'in-progress' AND user_progress.status != 'in-progress' THEN EXCLUDED.started_at
+				ELSE user_progress.started_at
+			END,
+			completed_at = CASE 
+				WHEN EXCLUDED.status = 'done' THEN $7
+				WHEN EXCLUDED.status != 'done' THEN NULL
+				ELSE user_progress.completed_at
+			END,
+			updated_at = EXCLUDED.updated_at`
+
+	_, err := r.db.Exec(
+		query,
+		userID,
+		itemID,
+		status,
+		now, // started_at for new records
+		now, // created_at
+		now, // updated_at
+		now, // completed_at for done status
+	)
+
+	if err != nil {
+		return fmt.Errorf("failed to upsert user progress for item: %w", err)
+	}
+
+	return nil
+}
+
+// ResetInProgressItemsForUser resets any in-progress items for a user back to pending
+func (r *ItemRepository) ResetInProgressItemsForUser(userID int) error {
+	query := `
+		UPDATE user_progress 
+		SET status = 'pending', updated_at = $1
+		WHERE user_id = $2 AND status = 'in-progress'`
+
+	_, err := r.db.Exec(query, time.Now(), userID)
+	if err != nil {
+		return fmt.Errorf("failed to reset in-progress items for user: %w", err)
+	}
+
+	return nil
 }

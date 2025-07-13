@@ -22,6 +22,8 @@ func RunMigrations(db *sql.DB) error {
 		createRefreshTokensTable,
 		fixUsersUniqueConstraint,
 		addUserRoleColumn,
+		addUserProgressStarredColumn,
+		addUserStatsCompletedAllCountColumn,
 	}
 
 	for i, migration := range migrations {
@@ -215,6 +217,28 @@ BEGIN
                    WHERE table_name='users' AND column_name='role') THEN
         ALTER TABLE users ADD COLUMN role VARCHAR(20) NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'admin'));
         CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
+    END IF;
+END $$;
+`
+
+const addUserProgressStarredColumn = `
+DO $$ 
+BEGIN 
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name='user_progress' AND column_name='starred') THEN
+        ALTER TABLE user_progress ADD COLUMN starred BOOLEAN NOT NULL DEFAULT false;
+        CREATE INDEX IF NOT EXISTS idx_user_progress_starred ON user_progress(starred);
+        CREATE INDEX IF NOT EXISTS idx_user_progress_user_starred ON user_progress(user_id, starred);
+    END IF;
+END $$;
+`
+
+const addUserStatsCompletedAllCountColumn = `
+DO $$ 
+BEGIN 
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name='user_stats' AND column_name='completed_all_count') THEN
+        ALTER TABLE user_stats ADD COLUMN completed_all_count INTEGER NOT NULL DEFAULT 0;
     END IF;
 END $$;
 `

@@ -51,6 +51,19 @@ func (s *ItemService) GetItem(id int) (*models.Item, error) {
 	return s.itemRepo.GetByID(id)
 }
 
+// GetItemWithUserProgress retrieves an item by ID with user-specific progress data
+func (s *ItemService) GetItemWithUserProgress(userID, itemID int) (*models.ItemWithProgress, error) {
+	if userID <= 0 {
+		return nil, fmt.Errorf("invalid user ID")
+	}
+
+	if itemID <= 0 {
+		return nil, fmt.Errorf("invalid item ID")
+	}
+
+	return s.itemRepo.GetByIDWithUserProgress(userID, itemID)
+}
+
 // GetItems retrieves items with filtering and validation
 func (s *ItemService) GetItems(filter *models.ItemFilter) ([]*models.Item, error) {
 	// Validate filter parameters
@@ -71,6 +84,32 @@ func (s *ItemService) GetItems(filter *models.ItemFilter) ([]*models.Item, error
 	}
 
 	return s.itemRepo.GetAll(filter)
+}
+
+// GetItemsWithUserProgress retrieves items with user-specific progress data
+func (s *ItemService) GetItemsWithUserProgress(userID int, filter *models.ItemFilter) ([]*models.ItemWithProgress, error) {
+	// Validate filter parameters
+	if filter.Category != nil && !models.IsValidCategory(*filter.Category) {
+		return nil, fmt.Errorf("invalid category: %s", *filter.Category)
+	}
+
+	if filter.Status != nil && !models.IsValidStatus(*filter.Status) {
+		return nil, fmt.Errorf("invalid status: %s", *filter.Status)
+	}
+
+	if filter.Limit != nil && *filter.Limit < 0 {
+		return nil, fmt.Errorf("limit cannot be negative")
+	}
+
+	if filter.Offset != nil && *filter.Offset < 0 {
+		return nil, fmt.Errorf("offset cannot be negative")
+	}
+
+	if userID <= 0 {
+		return nil, fmt.Errorf("invalid user ID")
+	}
+
+	return s.itemRepo.GetAllWithUserProgress(userID, filter)
 }
 
 // GetItemsPaginated retrieves items with filtering, validation and pagination metadata
@@ -111,6 +150,92 @@ func (s *ItemService) GetItemsPaginated(filter *models.ItemFilter) (*models.Pagi
 
 	// Get items
 	items, err := s.itemRepo.GetAll(filter)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert []*models.Item to []*models.ItemWithProgress for backward compatibility
+	itemsWithProgress := make([]*models.ItemWithProgress, len(items))
+	for i, item := range items {
+		itemsWithProgress[i] = &models.ItemWithProgress{
+			ID:          item.ID,
+			Title:       item.Title,
+			Link:        item.Link,
+			Category:    item.Category,
+			Subcategory: item.Subcategory,
+			Status:      item.Status,
+			Starred:     item.Starred,
+			Attachments: item.Attachments,
+			CreatedAt:   item.CreatedAt,
+			CompletedAt: item.CompletedAt,
+			Notes:       "", // Default empty notes for non-user-specific queries
+		}
+	}
+
+	// Calculate pagination metadata
+	totalPages := (totalCount + limit - 1) / limit // Ceiling division
+	page := (offset / limit) + 1
+	hasNext := offset+limit < totalCount
+	hasPrev := offset > 0
+
+	pagination := models.PaginationMeta{
+		Total:      totalCount,
+		Limit:      limit,
+		Offset:     offset,
+		HasNext:    hasNext,
+		HasPrev:    hasPrev,
+		TotalPages: totalPages,
+		Page:       page,
+	}
+
+	return &models.PaginatedItemsResponse{
+		Items:      itemsWithProgress,
+		Pagination: pagination,
+	}, nil
+}
+
+// GetItemsPaginatedWithUserProgress retrieves items with user-specific progress data, filtering, validation and pagination metadata
+func (s *ItemService) GetItemsPaginatedWithUserProgress(userID int, filter *models.ItemFilter) (*models.PaginatedItemsResponse, error) {
+	// Validate filter parameters
+	if filter.Category != nil && !models.IsValidCategory(*filter.Category) {
+		return nil, fmt.Errorf("invalid category: %s", *filter.Category)
+	}
+
+	if filter.Status != nil && !models.IsValidStatus(*filter.Status) {
+		return nil, fmt.Errorf("invalid status: %s", *filter.Status)
+	}
+
+	if filter.Limit != nil && *filter.Limit < 0 {
+		return nil, fmt.Errorf("limit cannot be negative")
+	}
+
+	if filter.Offset != nil && *filter.Offset < 0 {
+		return nil, fmt.Errorf("offset cannot be negative")
+	}
+
+	if userID <= 0 {
+		return nil, fmt.Errorf("invalid user ID")
+	}
+
+	// Set default limit if not provided
+	limit := 10
+	if filter.Limit != nil {
+		limit = *filter.Limit
+	}
+
+	offset := 0
+	if filter.Offset != nil {
+		offset = *filter.Offset
+	}
+
+	// Get total count with user progress
+	totalCount, err := s.itemRepo.GetTotalCountWithUserProgress(userID, filter)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get total count: %w", err)
+	}
+
+	// Get items with user progress
+	items, err := s.itemRepo.GetAllWithUserProgress(userID, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -160,6 +285,46 @@ func (s *ItemService) GetNextItem() (*models.Item, error) {
 	return s.itemRepo.SetInProgress(pendingItem.ID)
 }
 
+// GetNextItemWithUserProgress retrieves the current in-progress item or a random pending item for a user
+func (s *ItemService) GetNextItemWithUserProgress(userID int) (*models.ItemWithProgress, error) {
+	if userID <= 0 {
+		return nil, fmt.Errorf("invalid user ID")
+	}
+
+	// First check if there's already an in-progress item for this user
+	inProgressItem, err := s.itemRepo.GetInProgressItemWithUserProgress(userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check for in-progress item: %w", err)
+	}
+
+	// If there's an in-progress item, return it
+	if inProgressItem != nil {
+		return inProgressItem, nil
+	}
+
+	// Otherwise, get a random pending item for this user
+	pendingItem, err := s.itemRepo.GetRandomPendingWithUserProgress(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Reset any existing in-progress items for this user
+	err = s.itemRepo.ResetInProgressItemsForUser(userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to reset in-progress items: %w", err)
+	}
+
+	// Create or update user progress record to set it as in-progress
+	err = s.itemRepo.UpsertUserProgressForItem(userID, pendingItem.ID, models.StatusInProgress)
+	if err != nil {
+		return nil, fmt.Errorf("failed to upsert user progress: %w", err)
+	}
+
+	// Update the item status to in-progress and return it
+	pendingItem.Status = models.StatusInProgress
+	return pendingItem, nil
+}
+
 // SkipItem moves the current in-progress item back to pending and gets a new random item
 func (s *ItemService) SkipItem() (*models.Item, error) {
 	// Get a random pending item (this will automatically reset any in-progress items)
@@ -170,6 +335,35 @@ func (s *ItemService) SkipItem() (*models.Item, error) {
 
 	// Set it as in-progress (this will also reset the current in-progress item to pending)
 	return s.itemRepo.SetInProgress(pendingItem.ID)
+}
+
+// SkipItemWithUserProgress moves the current in-progress item back to pending and gets a new random item for a user
+func (s *ItemService) SkipItemWithUserProgress(userID int) (*models.ItemWithProgress, error) {
+	if userID <= 0 {
+		return nil, fmt.Errorf("invalid user ID")
+	}
+
+	// First, reset any existing in-progress items for this user back to pending
+	err := s.itemRepo.ResetInProgressItemsForUser(userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to reset in-progress items: %w", err)
+	}
+
+	// Get a new random pending item for this user
+	pendingItem, err := s.itemRepo.GetRandomPendingWithUserProgress(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Set the new item as in-progress
+	err = s.itemRepo.UpsertUserProgressForItem(userID, pendingItem.ID, models.StatusInProgress)
+	if err != nil {
+		return nil, fmt.Errorf("failed to upsert user progress: %w", err)
+	}
+
+	// Update the item status to in-progress and return it
+	pendingItem.Status = models.StatusInProgress
+	return pendingItem, nil
 }
 
 // CompleteItem marks an item as completed and handles completion logic
