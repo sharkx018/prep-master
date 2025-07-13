@@ -49,70 +49,176 @@ func (s *StatsService) GetOverallStats() (*models.Stats, error) {
 	}, nil
 }
 
-// GetDetailedStats retrieves comprehensive statistics including category and subcategory breakdown
-func (s *StatsService) GetDetailedStats() (*models.DetailedStats, error) {
-	// Get overall stats
-	overallStats, err := s.GetOverallStats()
+// GetOverallStatsForUser retrieves comprehensive statistics for a specific user
+func (s *StatsService) GetOverallStatsForUser(userID int) (*models.Stats, error) {
+	// Get user-specific item counts
+	total, completed, pending, _, err := s.itemRepo.GetCountsForUser(userID)
 	if err != nil {
 		return nil, err
 	}
 
-	// Get subcategory breakdown
+	// Calculate progress percentage
+	var progressPercentage float64
+	if total > 0 {
+		progressPercentage = float64(completed) / float64(total) * 100
+	}
+
+	// Get user-specific completed all count
+	userStats, err := s.statsRepo.GetUserStats(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &models.Stats{
+		TotalItems:         total,
+		CompletedItems:     completed,
+		PendingItems:       pending,
+		ProgressPercentage: progressPercentage,
+		CompletedAllCount:  userStats.CompletedAllCount,
+	}, nil
+}
+
+// GetDetailedStats retrieves comprehensive statistics including category and subcategory breakdown
+func (s *StatsService) GetDetailedStats() (*models.DetailedStats, error) {
+	// Get overall stats
+	overall, err := s.GetOverallStats()
+	if err != nil {
+		return nil, err
+	}
+
+	// Get category counts
+	categoryCounts, err := s.itemRepo.GetCountsByCategory()
+	if err != nil {
+		return nil, err
+	}
+
+	// Get subcategory counts
 	subcategoryCounts, err := s.itemRepo.GetCountsBySubcategory()
 	if err != nil {
 		return nil, err
 	}
 
-	// Build category stats with subcategories
-	var categoryStats []models.CategoryWithSubcategoryStats
-	for _, category := range models.ValidCategories() {
-		categoryData := subcategoryCounts[category]
+	// Build category stats with subcategory breakdown
+	var categories []models.CategoryWithSubcategoryStats
 
-		var categoryTotal, categoryCompleted, categoryPending int
-		var subcategoryStats []models.SubcategoryStats
+	for category, statusCounts := range categoryCounts {
+		total := statusCounts[models.StatusPending] + statusCounts[models.StatusInProgress] + statusCounts[models.StatusDone]
+		completed := statusCounts[models.StatusDone]
+		pending := statusCounts[models.StatusPending]
 
-		// Process each subcategory
-		for subcategory, statusCounts := range categoryData {
-			subTotal := statusCounts[models.StatusDone] + statusCounts[models.StatusPending] + statusCounts[models.StatusInProgress]
-			subCompleted := statusCounts[models.StatusDone]
-			subPending := statusCounts[models.StatusPending] + statusCounts[models.StatusInProgress]
+		var progressPercentage float64
+		if total > 0 {
+			progressPercentage = float64(completed) / float64(total) * 100
+		}
 
-			categoryTotal += subTotal
-			categoryCompleted += subCompleted
-			categoryPending += subPending
+		// Get subcategories for this category
+		var subcategories []models.SubcategoryStats
+		if subCats, exists := subcategoryCounts[category]; exists {
+			for subcategory, subStatusCounts := range subCats {
+				subTotal := subStatusCounts[models.StatusPending] + subStatusCounts[models.StatusInProgress] + subStatusCounts[models.StatusDone]
+				subCompleted := subStatusCounts[models.StatusDone]
+				subPending := subStatusCounts[models.StatusPending]
 
-			var subProgressPercentage float64
-			if subTotal > 0 {
-				subProgressPercentage = float64(subCompleted) / float64(subTotal) * 100
+				var subProgressPercentage float64
+				if subTotal > 0 {
+					subProgressPercentage = float64(subCompleted) / float64(subTotal) * 100
+				}
+
+				subcategories = append(subcategories, models.SubcategoryStats{
+					Subcategory:        subcategory,
+					TotalItems:         subTotal,
+					CompletedItems:     subCompleted,
+					PendingItems:       subPending,
+					ProgressPercentage: subProgressPercentage,
+				})
 			}
-
-			subcategoryStats = append(subcategoryStats, models.SubcategoryStats{
-				Subcategory:        subcategory,
-				TotalItems:         subTotal,
-				CompletedItems:     subCompleted,
-				PendingItems:       subPending,
-				ProgressPercentage: subProgressPercentage,
-			})
 		}
 
-		var categoryProgressPercentage float64
-		if categoryTotal > 0 {
-			categoryProgressPercentage = float64(categoryCompleted) / float64(categoryTotal) * 100
-		}
-
-		categoryStats = append(categoryStats, models.CategoryWithSubcategoryStats{
+		categories = append(categories, models.CategoryWithSubcategoryStats{
 			Category:           category,
-			TotalItems:         categoryTotal,
-			CompletedItems:     categoryCompleted,
-			PendingItems:       categoryPending,
-			ProgressPercentage: categoryProgressPercentage,
-			Subcategories:      subcategoryStats,
+			TotalItems:         total,
+			CompletedItems:     completed,
+			PendingItems:       pending,
+			ProgressPercentage: progressPercentage,
+			Subcategories:      subcategories,
 		})
 	}
 
 	return &models.DetailedStats{
-		Overall:    *overallStats,
-		Categories: categoryStats,
+		Overall:    *overall,
+		Categories: categories,
+	}, nil
+}
+
+// GetDetailedStatsForUser retrieves comprehensive statistics for a specific user including category and subcategory breakdown
+func (s *StatsService) GetDetailedStatsForUser(userID int) (*models.DetailedStats, error) {
+	// Get overall user stats
+	overall, err := s.GetOverallStatsForUser(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get user-specific category counts
+	categoryCounts, err := s.itemRepo.GetCountsByCategoryForUser(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get user-specific subcategory counts
+	subcategoryCounts, err := s.itemRepo.GetCountsBySubcategoryForUser(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Build category stats with subcategory breakdown
+	var categories []models.CategoryWithSubcategoryStats
+
+	for category, statusCounts := range categoryCounts {
+		total := statusCounts[models.StatusPending] + statusCounts[models.StatusInProgress] + statusCounts[models.StatusDone]
+		completed := statusCounts[models.StatusDone]
+		pending := statusCounts[models.StatusPending]
+
+		var progressPercentage float64
+		if total > 0 {
+			progressPercentage = float64(completed) / float64(total) * 100
+		}
+
+		// Get subcategories for this category
+		var subcategories []models.SubcategoryStats
+		if subCats, exists := subcategoryCounts[category]; exists {
+			for subcategory, subStatusCounts := range subCats {
+				subTotal := subStatusCounts[models.StatusPending] + subStatusCounts[models.StatusInProgress] + subStatusCounts[models.StatusDone]
+				subCompleted := subStatusCounts[models.StatusDone]
+				subPending := subStatusCounts[models.StatusPending]
+
+				var subProgressPercentage float64
+				if subTotal > 0 {
+					subProgressPercentage = float64(subCompleted) / float64(subTotal) * 100
+				}
+
+				subcategories = append(subcategories, models.SubcategoryStats{
+					Subcategory:        subcategory,
+					TotalItems:         subTotal,
+					CompletedItems:     subCompleted,
+					PendingItems:       subPending,
+					ProgressPercentage: subProgressPercentage,
+				})
+			}
+		}
+
+		categories = append(categories, models.CategoryWithSubcategoryStats{
+			Category:           category,
+			TotalItems:         total,
+			CompletedItems:     completed,
+			PendingItems:       pending,
+			ProgressPercentage: progressPercentage,
+			Subcategories:      subcategories,
+		})
+	}
+
+	return &models.DetailedStats{
+		Overall:    *overall,
+		Categories: categories,
 	}, nil
 }
 
@@ -125,6 +231,38 @@ func (s *StatsService) GetCategoryStats(category models.Category) (*models.Categ
 
 	// Get category counts
 	categoryCounts, err := s.itemRepo.GetCountsByCategory()
+	if err != nil {
+		return nil, err
+	}
+
+	counts := categoryCounts[category]
+	total := counts[models.StatusDone] + counts[models.StatusPending] + counts[models.StatusInProgress]
+	completed := counts[models.StatusDone]
+	pending := counts[models.StatusPending] + counts[models.StatusInProgress]
+
+	var progressPercentage float64
+	if total > 0 {
+		progressPercentage = float64(completed) / float64(total) * 100
+	}
+
+	return &models.CategoryStats{
+		Category:           category,
+		TotalItems:         total,
+		CompletedItems:     completed,
+		PendingItems:       pending,
+		ProgressPercentage: progressPercentage,
+	}, nil
+}
+
+// GetCategoryStatsForUser retrieves statistics for a specific category and user
+func (s *StatsService) GetCategoryStatsForUser(userID int, category models.Category) (*models.CategoryStats, error) {
+	// Validate category
+	if !models.IsValidCategory(category) {
+		return nil, fmt.Errorf("invalid category: %s", category)
+	}
+
+	// Get user-specific category counts
+	categoryCounts, err := s.itemRepo.GetCountsByCategoryForUser(userID)
 	if err != nil {
 		return nil, err
 	}
@@ -191,7 +329,59 @@ func (s *StatsService) GetSubcategoryStats(category models.Category, subcategory
 	}, nil
 }
 
+// GetSubcategoryStatsForUser retrieves statistics for a specific category, subcategory, and user
+func (s *StatsService) GetSubcategoryStatsForUser(userID int, category models.Category, subcategory string) (*models.SubcategoryStats, error) {
+	// Validate category
+	if !models.IsValidCategory(category) {
+		return nil, fmt.Errorf("invalid category: %s", category)
+	}
+
+	// Get user-specific subcategory counts
+	subcategoryCounts, err := s.itemRepo.GetCountsBySubcategoryForUser(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	categoryData := subcategoryCounts[category]
+	if categoryData == nil {
+		return &models.SubcategoryStats{
+			Subcategory:        subcategory,
+			TotalItems:         0,
+			CompletedItems:     0,
+			PendingItems:       0,
+			ProgressPercentage: 0,
+		}, nil
+	}
+
+	statusCounts := categoryData[subcategory]
+	total := statusCounts[models.StatusDone] + statusCounts[models.StatusPending] + statusCounts[models.StatusInProgress]
+	completed := statusCounts[models.StatusDone]
+	pending := statusCounts[models.StatusPending] + statusCounts[models.StatusInProgress]
+
+	var progressPercentage float64
+	if total > 0 {
+		progressPercentage = float64(completed) / float64(total) * 100
+	}
+
+	return &models.SubcategoryStats{
+		Subcategory:        subcategory,
+		TotalItems:         total,
+		CompletedItems:     completed,
+		PendingItems:       pending,
+		ProgressPercentage: progressPercentage,
+	}, nil
+}
+
 // ResetCompletedAllCount resets the completed all count to zero
 func (s *StatsService) ResetCompletedAllCount() error {
 	return s.statsRepo.ResetCompletedAllCount()
+}
+
+// ResetUserCompletedAllCount resets the completed all count for a specific user to zero
+func (s *StatsService) ResetUserCompletedAllCount(userID int) error {
+	if userID <= 0 {
+		return fmt.Errorf("invalid user ID")
+	}
+
+	return s.statsRepo.ResetUserCompletedAllCount(userID)
 }

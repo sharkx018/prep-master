@@ -43,7 +43,7 @@ func main() {
 	// Initialize services
 	itemService := services.NewItemService(itemRepo, statsRepo)
 	statsService := services.NewStatsService(itemRepo, statsRepo)
-	userService := services.NewUserService(userRepo)
+	userService := services.NewUserService(userRepo, statsRepo)
 
 	// Initialize handlers
 	itemHandler := handlers.NewItemHandler(itemService, userService)

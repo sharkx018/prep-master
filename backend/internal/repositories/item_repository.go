@@ -1011,3 +1011,108 @@ func (r *ItemRepository) ResetAllUserProgress(userID int) (int64, error) {
 
 	return rowsAffected, nil
 }
+
+// GetCountsForUser returns item counts by status for a specific user
+func (r *ItemRepository) GetCountsForUser(userID int) (total, completed, pending, inProgress int, err error) {
+	query := `
+		SELECT 
+			COUNT(*) as total,
+			COUNT(CASE WHEN COALESCE(up.status, 'pending') = 'done' THEN 1 END) as completed,
+			COUNT(CASE WHEN COALESCE(up.status, 'pending') = 'pending' THEN 1 END) as pending,
+			COUNT(CASE WHEN COALESCE(up.status, 'pending') = 'in-progress' THEN 1 END) as in_progress
+		FROM items i
+		LEFT JOIN user_progress up 
+			ON i.id = up.item_id AND up.user_id = $1`
+
+	err = r.db.QueryRow(query, userID).Scan(&total, &completed, &pending, &inProgress)
+	if err != nil {
+		return 0, 0, 0, 0, fmt.Errorf("failed to get user counts: %w", err)
+	}
+
+	return total, completed, pending, inProgress, nil
+}
+
+// GetCountsByCategoryForUser returns item counts by category and status for a specific user
+func (r *ItemRepository) GetCountsByCategoryForUser(userID int) (map[models.Category]map[models.Status]int, error) {
+	query := `
+		SELECT 
+			i.category,
+			COALESCE(up.status, 'pending') as status,
+			COUNT(*) as count
+		FROM items i
+		LEFT JOIN user_progress up 
+			ON i.id = up.item_id AND up.user_id = $1
+		GROUP BY i.category, COALESCE(up.status, 'pending')
+		ORDER BY i.category, status`
+
+	rows, err := r.db.Query(query, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user category counts: %w", err)
+	}
+	defer rows.Close()
+
+	result := make(map[models.Category]map[models.Status]int)
+
+	for rows.Next() {
+		var category models.Category
+		var status models.Status
+		var count int
+
+		err := rows.Scan(&category, &status, &count)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan category count: %w", err)
+		}
+
+		if result[category] == nil {
+			result[category] = make(map[models.Status]int)
+		}
+		result[category][status] = count
+	}
+
+	return result, nil
+}
+
+// GetCountsBySubcategoryForUser returns item counts by subcategory and status for a specific user
+func (r *ItemRepository) GetCountsBySubcategoryForUser(userID int) (map[models.Category]map[string]map[models.Status]int, error) {
+	query := `
+		SELECT 
+			i.category,
+			i.subcategory,
+			COALESCE(up.status, 'pending') as status,
+			COUNT(*) as count
+		FROM items i
+		LEFT JOIN user_progress up 
+			ON i.id = up.item_id AND up.user_id = $1
+		GROUP BY i.category, i.subcategory, COALESCE(up.status, 'pending')
+		ORDER BY i.category, i.subcategory, status`
+
+	rows, err := r.db.Query(query, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user subcategory counts: %w", err)
+	}
+	defer rows.Close()
+
+	result := make(map[models.Category]map[string]map[models.Status]int)
+
+	for rows.Next() {
+		var category models.Category
+		var subcategory string
+		var status models.Status
+		var count int
+
+		err := rows.Scan(&category, &subcategory, &status, &count)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan subcategory count: %w", err)
+		}
+
+		if result[category] == nil {
+			result[category] = make(map[string]map[models.Status]int)
+		}
+		if result[category][subcategory] == nil {
+			result[category][subcategory] = make(map[models.Status]int)
+		}
+		result[category][subcategory][status] = count
+	}
+
+	return result, nil
+}

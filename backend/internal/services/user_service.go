@@ -16,13 +16,15 @@ import (
 
 // UserService handles user-related business logic
 type UserService struct {
-	userRepo *repositories.UserRepository
+	userRepo  *repositories.UserRepository
+	statsRepo *repositories.StatsRepository
 }
 
 // NewUserService creates a new UserService
-func NewUserService(userRepo *repositories.UserRepository) *UserService {
+func NewUserService(userRepo *repositories.UserRepository, statsRepo *repositories.StatsRepository) *UserService {
 	return &UserService{
-		userRepo: userRepo,
+		userRepo:  userRepo,
+		statsRepo: statsRepo,
 	}
 }
 
@@ -57,6 +59,14 @@ func (s *UserService) RegisterWithEmail(req *models.CreateUserRequest) (*models.
 	err = s.userRepo.Create(user)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create user: %w", err)
+	}
+
+	// Create initial user stats
+	_, err = s.statsRepo.GetUserStats(user.ID)
+	if err != nil {
+		// If GetUserStats fails, it will automatically create the stats via initializeUserStats
+		// Log the error but don't fail the registration
+		fmt.Printf("Warning: failed to initialize user stats for user %d: %v\n", user.ID, err)
 	}
 
 	// Remove password hash from returned user
@@ -129,6 +139,14 @@ func (s *UserService) LoginWithOAuth(req *models.OAuthLoginRequest) (*models.Use
 	err = s.userRepo.Create(user)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create user: %w", err)
+	}
+
+	// Create initial user stats
+	_, err = s.statsRepo.GetUserStats(user.ID)
+	if err != nil {
+		// If GetUserStats fails, it will automatically create the stats via initializeUserStats
+		// Log the error but don't fail the registration
+		fmt.Printf("Warning: failed to initialize user stats for user %d: %v\n", user.ID, err)
 	}
 
 	return user, nil

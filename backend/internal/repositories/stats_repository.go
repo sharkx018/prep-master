@@ -71,6 +71,35 @@ func (r *StatsRepository) ResetCompletedAllCount() error {
 	return nil
 }
 
+// ResetUserCompletedAllCount resets the completed_all_count for a specific user
+func (r *StatsRepository) ResetUserCompletedAllCount(userID int) error {
+	query := `
+		UPDATE user_stats 
+		SET completed_all_count = 0, updated_at = CURRENT_TIMESTAMP
+		WHERE user_id = $1`
+
+	result, err := r.db.Exec(query, userID)
+	if err != nil {
+		return fmt.Errorf("failed to reset user completed_all_count: %w", err)
+	}
+
+	// Check if user stats record exists, if not create one
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+
+	// If no rows were affected, the user doesn't have stats yet, so create them
+	if rowsAffected == 0 {
+		_, err = r.initializeUserStats(userID)
+		if err != nil {
+			return fmt.Errorf("failed to initialize user stats: %w", err)
+		}
+	}
+
+	return nil
+}
+
 // IncrementUserCompletedAllCount increments the completed_all_count for a specific user
 func (r *StatsRepository) IncrementUserCompletedAllCount(userID int) error {
 	query := `
