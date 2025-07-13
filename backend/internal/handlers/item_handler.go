@@ -252,6 +252,13 @@ func (h *ItemHandler) SkipItem(c *gin.Context) {
 
 // CompleteItem handles PUT /items/:id/complete
 func (h *ItemHandler) CompleteItem(c *gin.Context) {
+	// Get user ID from context
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
@@ -259,10 +266,11 @@ func (h *ItemHandler) CompleteItem(c *gin.Context) {
 		return
 	}
 
-	item, err := h.itemService.CompleteItem(id)
+	// Use the new method that includes user progress
+	item, err := h.itemService.CompleteItemWithUserProgress(userID.(int), id)
 	if err != nil {
-		if err.Error() == "item not found or not in-progress" {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Item not found or not in-progress"})
+		if err.Error() == "item not found" {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Item not found"})
 			return
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -367,6 +375,13 @@ func (h *ItemHandler) GetSubcategories(c *gin.Context) {
 
 // ToggleStar handles PUT /items/:id/star
 func (h *ItemHandler) ToggleStar(c *gin.Context) {
+	// Get user ID from context
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
@@ -374,7 +389,8 @@ func (h *ItemHandler) ToggleStar(c *gin.Context) {
 		return
 	}
 
-	item, err := h.itemService.ToggleStar(id)
+	// Use the new method that includes user progress
+	item, err := h.itemService.ToggleStarWithUserProgress(userID.(int), id)
 	if err != nil {
 		if err.Error() == "item not found" {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Item not found"})
@@ -389,6 +405,13 @@ func (h *ItemHandler) ToggleStar(c *gin.Context) {
 
 // UpdateStatus handles PUT /items/:id/status
 func (h *ItemHandler) UpdateStatus(c *gin.Context) {
+	// Get user ID from context
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
@@ -405,7 +428,8 @@ func (h *ItemHandler) UpdateStatus(c *gin.Context) {
 	}
 
 	status := models.Status(req.Status)
-	item, err := h.itemService.UpdateStatus(id, status)
+	// Use the new method that includes user progress
+	item, err := h.itemService.UpdateStatusWithUserProgress(userID.(int), id, status)
 	if err != nil {
 		if err.Error() == "item not found" {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Item not found"})

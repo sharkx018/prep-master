@@ -838,3 +838,127 @@ func (r *ItemRepository) ResetInProgressItemsForUser(userID int) error {
 
 	return nil
 }
+
+// CountPendingForUser counts pending items for a specific user
+func (r *ItemRepository) CountPendingForUser(userID int) (int, error) {
+	query := `
+		SELECT COUNT(*) 
+		FROM items i
+		LEFT JOIN user_progress up 
+			ON i.id = up.item_id AND up.user_id = $1
+		WHERE COALESCE(up.status, 'pending') = 'pending'`
+
+	var count int
+	err := r.db.QueryRow(query, userID).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count pending items for user: %w", err)
+	}
+	return count, nil
+}
+
+// CompleteItemForUser marks an item as completed for a specific user
+func (r *ItemRepository) CompleteItemForUser(userID, itemID int) (*models.ItemWithProgress, error) {
+	// First, ensure the item exists
+	var itemExists bool
+	err := r.db.QueryRow("SELECT EXISTS(SELECT 1 FROM items WHERE id = $1)", itemID).Scan(&itemExists)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check if item exists: %w", err)
+	}
+	if !itemExists {
+		return nil, fmt.Errorf("item not found")
+	}
+
+	// Update or insert user progress to mark as completed
+	err = r.UpsertUserProgressForItem(userID, itemID, models.StatusDone)
+	if err != nil {
+		return nil, fmt.Errorf("failed to mark item as completed: %w", err)
+	}
+
+	// Get the completed item with user progress
+	item, err := r.GetByIDWithUserProgress(userID, itemID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get completed item: %w", err)
+	}
+
+	return item, nil
+}
+
+// ToggleStarForUser toggles the starred status of an item for a specific user
+func (r *ItemRepository) ToggleStarForUser(userID, itemID int) (*models.ItemWithProgress, error) {
+	// First, ensure the item exists
+	var itemExists bool
+	err := r.db.QueryRow("SELECT EXISTS(SELECT 1 FROM items WHERE id = $1)", itemID).Scan(&itemExists)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check if item exists: %w", err)
+	}
+	if !itemExists {
+		return nil, fmt.Errorf("item not found")
+	}
+
+	// Get current starred status or default to false
+	var currentStarred bool
+	query := `
+		SELECT COALESCE(up.starred, false)
+		FROM items i
+		LEFT JOIN user_progress up 
+			ON i.id = up.item_id AND up.user_id = $1
+		WHERE i.id = $2`
+
+	err = r.db.QueryRow(query, userID, itemID).Scan(&currentStarred)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get current starred status: %w", err)
+	}
+
+	// Toggle the starred status
+	newStarred := !currentStarred
+
+	// Upsert user progress with the new starred status
+	now := time.Now()
+	upsertQuery := `
+		INSERT INTO user_progress (user_id, item_id, status, starred, notes, created_at, updated_at)
+		VALUES ($1, $2, 'pending', $3, '', $4, $5)
+		ON CONFLICT (user_id, item_id) 
+		DO UPDATE SET 
+			starred = EXCLUDED.starred,
+			updated_at = EXCLUDED.updated_at`
+
+	_, err = r.db.Exec(upsertQuery, userID, itemID, newStarred, now, now)
+	if err != nil {
+		return nil, fmt.Errorf("failed to toggle star status: %w", err)
+	}
+
+	// Get the updated item with user progress
+	item, err := r.GetByIDWithUserProgress(userID, itemID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get updated item: %w", err)
+	}
+
+	return item, nil
+}
+
+// UpdateStatusForUser updates the status of an item for a specific user
+func (r *ItemRepository) UpdateStatusForUser(userID, itemID int, status models.Status) (*models.ItemWithProgress, error) {
+	// First, ensure the item exists
+	var itemExists bool
+	err := r.db.QueryRow("SELECT EXISTS(SELECT 1 FROM items WHERE id = $1)", itemID).Scan(&itemExists)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check if item exists: %w", err)
+	}
+	if !itemExists {
+		return nil, fmt.Errorf("item not found")
+	}
+
+	// Use the UpsertUserProgressForItem method to update status
+	err = r.UpsertUserProgressForItem(userID, itemID, status)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update status: %w", err)
+	}
+
+	// Get the updated item with user progress
+	item, err := r.GetByIDWithUserProgress(userID, itemID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get updated item: %w", err)
+	}
+
+	return item, nil
+}

@@ -398,6 +398,41 @@ func (s *ItemService) CompleteItem(id int) (*models.Item, error) {
 	return item, nil
 }
 
+// CompleteItemWithUserProgress marks an item as completed for a specific user and handles user stats
+func (s *ItemService) CompleteItemWithUserProgress(userID, itemID int) (*models.ItemWithProgress, error) {
+	if userID <= 0 {
+		return nil, fmt.Errorf("invalid user ID")
+	}
+
+	if itemID <= 0 {
+		return nil, fmt.Errorf("invalid item ID")
+	}
+
+	// Mark item as complete for the user
+	item, err := s.itemRepo.CompleteItemForUser(userID, itemID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check if all items are now completed for this user
+	pendingCount, err := s.itemRepo.CountPendingForUser(userID)
+	if err != nil {
+		// Log error but don't fail the completion
+		fmt.Printf("Warning: failed to count pending items for user %d: %v\n", userID, err)
+		return item, nil
+	}
+
+	// If all items are completed for this user, increment their completed_all_count
+	if pendingCount == 0 {
+		if err := s.statsRepo.IncrementUserCompletedAllCount(userID); err != nil {
+			// Log error but don't fail the completion
+			fmt.Printf("Warning: failed to increment user completed_all_count for user %d: %v\n", userID, err)
+		}
+	}
+
+	return item, nil
+}
+
 // UpdateItem updates an existing item with validation
 func (s *ItemService) UpdateItem(id int, req *models.UpdateItemRequest) (*models.Item, error) {
 	if id <= 0 {
@@ -470,6 +505,19 @@ func (s *ItemService) ToggleStar(id int) (*models.Item, error) {
 	return s.itemRepo.ToggleStar(id)
 }
 
+// ToggleStarWithUserProgress toggles the starred status of an item for a specific user
+func (s *ItemService) ToggleStarWithUserProgress(userID, itemID int) (*models.ItemWithProgress, error) {
+	if userID <= 0 {
+		return nil, fmt.Errorf("invalid user ID")
+	}
+
+	if itemID <= 0 {
+		return nil, fmt.Errorf("invalid item ID")
+	}
+
+	return s.itemRepo.ToggleStarForUser(userID, itemID)
+}
+
 // UpdateStatus updates the status of an item
 func (s *ItemService) UpdateStatus(id int, status models.Status) (*models.Item, error) {
 	if id <= 0 {
@@ -487,4 +535,35 @@ func (s *ItemService) UpdateStatus(id int, status models.Status) (*models.Item, 
 	}
 
 	return s.itemRepo.UpdateStatus(id, status)
+}
+
+// UpdateStatusWithUserProgress updates the status of an item for a specific user
+func (s *ItemService) UpdateStatusWithUserProgress(userID, itemID int, status models.Status) (*models.ItemWithProgress, error) {
+	if userID <= 0 {
+		return nil, fmt.Errorf("invalid user ID")
+	}
+
+	if itemID <= 0 {
+		return nil, fmt.Errorf("invalid item ID")
+	}
+
+	// Validate status
+	if !models.IsValidStatus(status) {
+		return nil, fmt.Errorf("invalid status: %s", status)
+	}
+
+	// Don't allow setting status to in-progress through this method
+	// Users should use GetNextItem or SkipItem for that
+	if status == models.StatusInProgress {
+		return nil, fmt.Errorf("cannot set status to in-progress directly. Use GetNextItem or SkipItem instead")
+	}
+
+	// If setting to done, check if all items will be completed and update stats
+	if status == models.StatusDone {
+		// Use the CompleteItemWithUserProgress method which handles the stats logic
+		return s.CompleteItemWithUserProgress(userID, itemID)
+	}
+
+	// For other statuses (pending), just update the status
+	return s.itemRepo.UpdateStatusForUser(userID, itemID, status)
 }
