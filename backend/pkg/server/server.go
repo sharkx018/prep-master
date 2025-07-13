@@ -4,21 +4,23 @@ import (
 	"interview-prep-app/internal/config"
 	"interview-prep-app/internal/handlers"
 	"interview-prep-app/internal/middleware"
+	"interview-prep-app/internal/repositories"
 
 	"github.com/gin-gonic/gin"
 )
 
 // Server represents the HTTP server
 type Server struct {
-	config       *config.Config
-	router       *gin.Engine
-	itemHandler  *handlers.ItemHandler
-	statsHandler *handlers.StatsHandler
-	authHandler  *handlers.AuthHandler
+	config           *config.Config
+	router           *gin.Engine
+	itemHandler      *handlers.ItemHandler
+	statsHandler     *handlers.StatsHandler
+	authHandler      *handlers.AuthHandler
+	userProgressRepo *repositories.UserProgressRepository
 }
 
 // New creates a new server instance
-func New(cfg *config.Config, itemHandler *handlers.ItemHandler, statsHandler *handlers.StatsHandler) *Server {
+func New(cfg *config.Config, itemHandler *handlers.ItemHandler, statsHandler *handlers.StatsHandler, authHandler *handlers.AuthHandler, userProgressRepo *repositories.UserProgressRepository) *Server {
 	// Set Gin mode based on environment
 	if cfg.IsProduction() {
 		gin.SetMode(gin.ReleaseMode)
@@ -26,15 +28,13 @@ func New(cfg *config.Config, itemHandler *handlers.ItemHandler, statsHandler *ha
 
 	router := gin.Default()
 
-	// Create auth handler
-	authHandler := handlers.NewAuthHandler(cfg)
-
 	return &Server{
-		config:       cfg,
-		router:       router,
-		itemHandler:  itemHandler,
-		statsHandler: statsHandler,
-		authHandler:  authHandler,
+		config:           cfg,
+		router:           router,
+		itemHandler:      itemHandler,
+		statsHandler:     statsHandler,
+		authHandler:      authHandler,
+		userProgressRepo: userProgressRepo,
 	}
 }
 
@@ -68,16 +68,25 @@ func (s *Server) setupRoutes() {
 	// Health check (public)
 	s.router.GET("/health", s.healthCheck)
 
-	// Authentication routes (public)
+	// Authentication routes (public) - Updated
 	auth := s.router.Group("/api/v1/auth")
 	{
+		auth.POST("/register", s.authHandler.Register)
 		auth.POST("/login", s.authHandler.Login)
+		auth.POST("/oauth/login", s.authHandler.OAuthLogin)
 	}
 
 	// Protected API v1 routes
 	v1 := s.router.Group("/api/v1")
 	v1.Use(middleware.AuthMiddleware(s.authHandler)) // Apply JWT middleware to all v1 routes
 	{
+		// User routes
+		user := v1.Group("/user")
+		{
+			user.GET("/profile", s.authHandler.GetCurrentUser)
+			user.PUT("/profile", s.authHandler.UpdateProfile)
+		}
+
 		// Item routes
 		items := v1.Group("/items")
 		{

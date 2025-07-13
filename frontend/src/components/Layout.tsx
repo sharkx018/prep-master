@@ -95,7 +95,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <div className="flex items-center space-x-2 text-white">
                   <div className="flex items-center bg-white/20 px-3 py-1 rounded-full">
                     <User className="h-4 w-4 mr-2" />
-                    <span className="text-sm font-medium">{user.username}</span>
+                    <span className="text-sm font-medium">{user.name}</span>
                   </div>
                   <button
                     onClick={handleLogout}

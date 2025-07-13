@@ -16,6 +16,11 @@ func RunMigrations(db *sql.DB) error {
 		fixStatusValues,
 		addStarredColumn,
 		addAttachmentsColumn,
+		createUsersTable,
+		createUserProgressTable,
+		createUserStatsTable,
+		createRefreshTokensTable,
+		fixUsersUniqueConstraint,
 	}
 
 	for i, migration := range migrations {
@@ -115,4 +120,89 @@ BEGIN
         ALTER TABLE items ADD COLUMN attachments JSONB DEFAULT '{}';
     END IF;
 END $$;
+`
+
+const createUsersTable = `
+CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    name VARCHAR(255) NOT NULL,
+    password_hash VARCHAR(255),
+    auth_provider VARCHAR(50) NOT NULL CHECK (auth_provider IN ('email', 'google', 'facebook', 'apple')),
+    provider_id VARCHAR(255),
+    avatar TEXT,
+    email_verified BOOLEAN DEFAULT false,
+    is_active BOOLEAN DEFAULT true,
+    last_login_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_provider ON users(auth_provider, provider_id);
+CREATE INDEX IF NOT EXISTS idx_users_active ON users(is_active);
+
+-- Create partial unique index for OAuth providers only (when provider_id is not null)
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_oauth_unique ON users(auth_provider, provider_id) WHERE provider_id IS NOT NULL;
+`
+
+const createUserProgressTable = `
+CREATE TABLE IF NOT EXISTS user_progress (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    item_id INTEGER NOT NULL REFERENCES items(id) ON DELETE CASCADE,
+    status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('done', 'pending', 'in-progress')),
+    notes TEXT,
+    started_at TIMESTAMP,
+    completed_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, item_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_progress_user_id ON user_progress(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_progress_item_id ON user_progress(item_id);
+CREATE INDEX IF NOT EXISTS idx_user_progress_status ON user_progress(status);
+CREATE INDEX IF NOT EXISTS idx_user_progress_user_status ON user_progress(user_id, status);
+`
+
+const createUserStatsTable = `
+CREATE TABLE IF NOT EXISTS user_stats (
+    user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    total_items INTEGER DEFAULT 0,
+    completed_items INTEGER DEFAULT 0,
+    in_progress_items INTEGER DEFAULT 0,
+    pending_items INTEGER DEFAULT 0,
+    dsa_completed INTEGER DEFAULT 0,
+    lld_completed INTEGER DEFAULT 0,
+    hld_completed INTEGER DEFAULT 0,
+    current_streak INTEGER DEFAULT 0,
+    longest_streak INTEGER DEFAULT 0,
+    last_activity_date DATE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+`
+
+const createRefreshTokensTable = `
+CREATE TABLE IF NOT EXISTS refresh_tokens (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token VARCHAR(255) NOT NULL UNIQUE,
+    expires_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_revoked BOOLEAN DEFAULT false
+);
+
+CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user_id ON refresh_tokens(user_id);
+CREATE INDEX IF NOT EXISTS idx_refresh_tokens_token ON refresh_tokens(token);
+CREATE INDEX IF NOT EXISTS idx_refresh_tokens_expires_at ON refresh_tokens(expires_at);
+`
+
+const fixUsersUniqueConstraint = `
+-- Drop the existing unique constraint if it exists
+ALTER TABLE users DROP CONSTRAINT IF EXISTS users_auth_provider_provider_id_key;
+
+-- Create partial unique index for OAuth providers only (when provider_id is not null)
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_oauth_unique ON users(auth_provider, provider_id) WHERE provider_id IS NOT NULL;
 `

@@ -8,10 +8,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// AuthMiddleware creates a JWT authentication middleware
+// AuthMiddleware creates a middleware that validates JWT tokens
 func AuthMiddleware(authHandler *handlers.AuthHandler) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Get the Authorization header
+		// Get token from Authorization header
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header required"})
@@ -20,25 +20,25 @@ func AuthMiddleware(authHandler *handlers.AuthHandler) gin.HandlerFunc {
 		}
 
 		// Check if the header starts with "Bearer "
-		if !strings.HasPrefix(authHeader, "Bearer ") {
+		bearerToken := strings.Split(authHeader, " ")
+		if len(bearerToken) != 2 || bearerToken[0] != "Bearer" {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid authorization header format"})
 			c.Abort()
 			return
 		}
 
-		// Extract the token
-		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-
-		// Validate the token
-		claims, err := authHandler.ValidateToken(tokenString)
+		// Validate token
+		claims, err := authHandler.ValidateToken(bearerToken[1])
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
 			c.Abort()
 			return
 		}
 
-		// Set user info in context for use in handlers
-		c.Set("username", claims.Username)
+		// Set user information in context
+		c.Set("userID", claims.UserID)
+		c.Set("userEmail", claims.Email)
+		c.Set("username", claims.Username) // For backward compatibility
 		c.Next()
 	}
 }

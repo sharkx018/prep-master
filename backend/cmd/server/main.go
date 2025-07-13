@@ -37,20 +37,24 @@ func main() {
 	// Initialize repositories
 	itemRepo := repositories.NewItemRepository(db)
 	statsRepo := repositories.NewStatsRepository(db)
+	userRepo := repositories.NewUserRepository(db)
+	userProgressRepo := repositories.NewUserProgressRepository(db)
 
 	// Initialize services
 	itemService := services.NewItemService(itemRepo, statsRepo)
 	statsService := services.NewStatsService(itemRepo, statsRepo)
+	userService := services.NewUserService(userRepo)
 
 	// Initialize handlers
 	itemHandler := handlers.NewItemHandler(itemService)
 	statsHandler := handlers.NewStatsHandler(statsService)
+	authHandler := handlers.NewAuthHandler(cfg, userService)
 
 	// Initialize and start server
-	srv := server.New(cfg, itemHandler, statsHandler)
+	srv := server.New(cfg, itemHandler, statsHandler, authHandler, userProgressRepo)
 
 	log.Printf("Server starting on port %s", cfg.Port)
-	log.Printf("Server starting on port %s", cfg)
+	log.Printf("Server configuration: %+v", cfg)
 	if err := srv.Start(); err != nil {
 		log.Fatal("Failed to start server:", err)
 	}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
 import { 
   ExternalLink, 
@@ -15,7 +15,7 @@ import {
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
-import { itemsApi, Item, UpdateItemRequest, PaginatedItemsResponse, PaginationMeta } from '../services/api';
+import { itemsApi, Item, UpdateItemRequest, PaginationMeta } from '../services/api';
 
 const Items: React.FC = () => {
   const { isDarkMode } = useTheme();
@@ -49,59 +49,75 @@ const Items: React.FC = () => {
   const [categoryFilter, setCategoryFilter] = useState<string>('');
   const [subcategoryFilter, setSubcategoryFilter] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
-  const [subcategories, setSubcategories] = useState<string[]>([]);
-  const [editSubcategories, setEditSubcategories] = useState<string[]>([]);
+  
+  // Subcategories cache - single source of truth
+  const [subcategoriesCache, setSubcategoriesCache] = useState<{ [key: string]: string[] }>({});
+  const [loadingSubcategories, setLoadingSubcategories] = useState<{ [key: string]: boolean }>({});
   
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
-  // Fetch subcategories for filter dropdown
-  useEffect(() => {
-    const fetchSubcategoriesForFilter = async () => {
-      if (categoryFilter) {
-        try {
-          const response = await itemsApi.getSubcategories(categoryFilter);
-          const subs = response?.subcategories && Array.isArray(response.subcategories) 
-            ? response.subcategories 
-            : [];
-          setSubcategories(subs);
-          // Reset subcategory filter when category filter changes
-          setSubcategoryFilter('');
-        } catch (err) {
-          console.error('Failed to fetch subcategories for filter', err);
-          setSubcategories([]);
-        }
-      } else {
-        setSubcategories([]);
-        setSubcategoryFilter('');
-      }
-    };
+  // Memoized subcategories for filter dropdown
+  const filterSubcategories = useMemo(() => {
+    return categoryFilter ? subcategoriesCache[categoryFilter] || [] : [];
+  }, [categoryFilter, subcategoriesCache]);
 
-    fetchSubcategoriesForFilter();
-  }, [categoryFilter]);
+  // Memoized subcategories for edit form
+  const editSubcategories = useMemo(() => {
+    return editForm.category ? subcategoriesCache[editForm.category] || [] : [];
+  }, [editForm.category, subcategoriesCache]);
 
-  // Fetch subcategories for edit form
-  useEffect(() => {
-    const fetchSubcategoriesForEdit = async () => {
-      if (editForm.category) {
-        try {
-          const response = await itemsApi.getSubcategories(editForm.category);
-          const subs = response?.subcategories && Array.isArray(response.subcategories) 
-            ? response.subcategories 
-            : [];
-          setEditSubcategories(subs);
-        } catch (err) {
-          console.error('Failed to fetch subcategories for edit', err);
-          setEditSubcategories([]);
-        }
-      }
-    };
-
-    if (editingId) {
-      fetchSubcategoriesForEdit();
+  // Optimized function to fetch subcategories with caching
+  const fetchSubcategories = useCallback(async (category: string) => {
+    if (!category) return;
+    
+    // Return cached data if available
+    if (subcategoriesCache[category]) {
+      return subcategoriesCache[category];
     }
-  }, [editForm.category, editingId]);
+    
+    // Prevent duplicate requests
+    if (loadingSubcategories[category]) {
+      return;
+    }
+
+    try {
+      setLoadingSubcategories(prev => ({ ...prev, [category]: true }));
+      const response = await itemsApi.getSubcategories(category);
+      const subs = response?.subcategories && Array.isArray(response.subcategories) 
+        ? response.subcategories 
+        : [];
+      
+      // Cache the result
+      setSubcategoriesCache(prev => ({ ...prev, [category]: subs }));
+      return subs;
+    } catch (err) {
+      console.error('Failed to fetch subcategories', err);
+      setSubcategoriesCache(prev => ({ ...prev, [category]: [] }));
+      return [];
+    } finally {
+      setLoadingSubcategories(prev => ({ ...prev, [category]: false }));
+    }
+  }, [subcategoriesCache, loadingSubcategories]);
+
+  // Fetch subcategories for filter when category changes
+  useEffect(() => {
+    if (categoryFilter) {
+      fetchSubcategories(categoryFilter);
+      // Reset subcategory filter when category filter changes
+      setSubcategoryFilter('');
+    } else {
+      setSubcategoryFilter('');
+    }
+  }, [categoryFilter, fetchSubcategories]);
+
+  // Fetch subcategories for edit form when category changes
+  useEffect(() => {
+    if (editingId && editForm.category) {
+      fetchSubcategories(editForm.category);
+    }
+  }, [editForm.category, editingId, fetchSubcategories]);
 
   useEffect(() => {
     const loadItems = async () => {
@@ -386,18 +402,23 @@ const Items: React.FC = () => {
               id="subcategory"
               value={subcategoryFilter}
               onChange={(e) => setSubcategoryFilter(e.target.value)}
+              disabled={!categoryFilter || loadingSubcategories[categoryFilter]}
               className={`block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${
                 isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-900'
               }`}
             >
               <option value="">All Subcategories</option>
-              {subcategories.map((subcategory) => (
-                <option key={subcategory} value={subcategory}>
-                  {subcategory.split('-').map(word => 
-                    word.charAt(0).toUpperCase() + word.slice(1)
-                  ).join(' ')}
-                </option>
-              ))}
+              {loadingSubcategories[categoryFilter] ? (
+                <option value="">Loading subcategories...</option>
+              ) : (
+                filterSubcategories.map((subcategory) => (
+                  <option key={subcategory} value={subcategory}>
+                    {subcategory.split('-').map(word => 
+                      word.charAt(0).toUpperCase() + word.slice(1)
+                    ).join(' ')}
+                  </option>
+                ))
+              )}
             </select>
           </div>
           

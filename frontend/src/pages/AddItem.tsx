@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
 import { Save, Loader2, Plus, X } from 'lucide-react';
@@ -9,9 +9,12 @@ const AddItem: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [subcategories, setSubcategories] = useState<string[]>([]);
   const [attachmentKey, setAttachmentKey] = useState('');
   const [attachmentValue, setAttachmentValue] = useState('');
+  
+  // Subcategories cache
+  const [subcategoriesCache, setSubcategoriesCache] = useState<{ [key: string]: string[] }>({});
+  const [loadingSubcategories, setLoadingSubcategories] = useState<{ [key: string]: boolean }>({});
   
   const [formData, setFormData] = useState<CreateItemRequest>({
     title: '',
@@ -21,31 +24,58 @@ const AddItem: React.FC = () => {
     attachments: {},
   });
 
-  useEffect(() => {
-    fetchSubcategories(formData.category);
-  }, [formData.category]);
+  // Memoized subcategories for current category
+  const subcategories = useMemo(() => {
+    return formData.category ? subcategoriesCache[formData.category] || [] : [];
+  }, [formData.category, subcategoriesCache]);
 
-  const fetchSubcategories = async (category: string) => {
+  // Optimized function to fetch subcategories with caching
+  const fetchSubcategories = useCallback(async (category: string) => {
+    if (!category) return [];
+    
+    // Return cached data if available
+    if (subcategoriesCache[category]) {
+      return subcategoriesCache[category];
+    }
+    
+    // Prevent duplicate requests
+    if (loadingSubcategories[category]) {
+      return [];
+    }
+
     try {
+      setLoadingSubcategories(prev => ({ ...prev, [category]: true }));
       const response = await itemsApi.getSubcategories(category);
       const subs = response?.subcategories && Array.isArray(response.subcategories) 
         ? response.subcategories 
         : [];
-      setSubcategories(subs);
+      
+      // Cache the result
+      setSubcategoriesCache(prev => ({ ...prev, [category]: subs }));
+      return subs;
+    } catch (err) {
+      console.error('Failed to fetch subcategories', err);
+      setSubcategoriesCache(prev => ({ ...prev, [category]: [] }));
+      return [];
+    } finally {
+      setLoadingSubcategories(prev => ({ ...prev, [category]: false }));
+    }
+  }, [subcategoriesCache, loadingSubcategories]);
+
+  useEffect(() => {
+    const loadSubcategories = async () => {
+      const subs = await fetchSubcategories(formData.category);
       
       // Reset subcategory when category changes - only set to first item if we have subcategories
       // This ensures the subcategory gets properly reset and user sees the change
       setFormData(prev => ({ 
         ...prev, 
-        subcategory: subs.length > 0 ? subs[0] : '' 
+        subcategory: subs && subs.length > 0 ? subs[0] : '' 
       }));
-    } catch (err) {
-      console.error('Failed to fetch subcategories', err);
-      setSubcategories([]); // Set empty array on error
-      // Reset subcategory on error
-      setFormData(prev => ({ ...prev, subcategory: '' }));
-    }
-  };
+    };
+
+    loadSubcategories();
+  }, [formData.category, fetchSubcategories]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -209,13 +239,16 @@ const AddItem: React.FC = () => {
                 required
                 value={formData.subcategory}
                 onChange={handleChange}
+                disabled={loadingSubcategories[formData.category]}
                 className={`mt-1 block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${
                   isDarkMode 
                     ? 'bg-gray-700 border-gray-600 text-gray-100' 
                     : 'bg-white border-gray-300 text-gray-900'
                 }`}
               >
-                {subcategories && subcategories.length > 0 ? (
+                {loadingSubcategories[formData.category] ? (
+                  <option value="">Loading subcategories...</option>
+                ) : subcategories && subcategories.length > 0 ? (
                   subcategories.map((sub) => (
                     <option key={sub} value={sub}>
                       {sub.split('-').map(word => 

@@ -1,4 +1,4 @@
-FROM golang:1.21-alpine
+FROM golang:1.23-alpine
 
 # Install air for hot reload (using compatible version)
 RUN go install github.com/cosmtrek/air@v1.49.0

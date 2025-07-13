@@ -127,7 +127,7 @@ const Dashboard: React.FC = () => {
               <h2 className="text-3xl font-bold">PrepMaster Dashboard</h2>
             </div>
             <p className="text-indigo-100 text-lg mb-2">
-              Welcome back, {user?.username || 'User'}!
+              Welcome back, {user?.name || 'User'}!
             </p>
             <div className="flex items-center space-x-2">
               <Sparkles className="h-5 w-5 text-yellow-300" />
