@@ -991,3 +991,23 @@ func (r *ItemRepository) UpdateStatusForUser(userID, itemID int, status models.S
 
 	return item, nil
 }
+
+// ResetAllUserProgress resets all user progress for a specific user back to pending
+func (r *ItemRepository) ResetAllUserProgress(userID int) (int64, error) {
+	query := `
+		UPDATE user_progress 
+		SET status = 'pending', completed_at = NULL, updated_at = $1
+		WHERE user_id = $2 AND status IN ('done', 'in-progress')`
+
+	result, err := r.db.Exec(query, time.Now(), userID)
+	if err != nil {
+		return 0, fmt.Errorf("failed to reset user progress: %w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return 0, fmt.Errorf("failed to get rows affected: %w", err)
+	}
+
+	return rowsAffected, nil
+}

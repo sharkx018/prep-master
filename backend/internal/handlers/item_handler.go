@@ -344,14 +344,22 @@ func (h *ItemHandler) DeleteItem(c *gin.Context) {
 
 // ResetItems handles POST /items/reset
 func (h *ItemHandler) ResetItems(c *gin.Context) {
-	rowsAffected, err := h.itemService.ResetAllItems()
+	// Get user ID from context
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	// Use the new method that resets user-specific progress
+	rowsAffected, err := h.itemService.ResetAllItemsWithUserProgress(userID.(int))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message":       "All items reset to pending status",
+		"message":       "Your progress has been reset to pending status",
 		"items_updated": rowsAffected,
 	})
 }

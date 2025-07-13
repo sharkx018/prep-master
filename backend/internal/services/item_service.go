@@ -477,6 +477,15 @@ func (s *ItemService) ResetAllItems() (int64, error) {
 	return s.itemRepo.ResetAll()
 }
 
+// ResetAllItemsWithUserProgress resets all user progress for a specific user back to pending
+func (s *ItemService) ResetAllItemsWithUserProgress(userID int) (int64, error) {
+	if userID <= 0 {
+		return 0, fmt.Errorf("invalid user ID")
+	}
+
+	return s.itemRepo.ResetAllUserProgress(userID)
+}
+
 // GetItemCounts returns basic item statistics
 func (s *ItemService) GetItemCounts() (total, completed, pending int, err error) {
 	return s.itemRepo.GetCounts()
