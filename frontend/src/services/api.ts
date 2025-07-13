@@ -74,6 +74,8 @@ export interface Stats {
   pending_items: number;
   progress_percentage: number;
   completed_all_count: number;
+  current_streak: number;
+  longest_streak: number;
 }
 
 export interface SubcategoryStats {

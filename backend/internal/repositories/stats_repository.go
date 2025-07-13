@@ -3,6 +3,7 @@ package repositories
 import (
 	"database/sql"
 	"fmt"
+	"time"
 
 	"interview-prep-app/internal/models"
 )
@@ -190,4 +191,115 @@ func (r *StatsRepository) initializeAppStats() (*models.AppStats, error) {
 	}
 
 	return &stats, nil
+}
+
+// UpdateUserStreakOnActivity updates the user's streak when they complete an item
+func (r *StatsRepository) UpdateUserStreakOnActivity(userID int) error {
+	// First check if user already has activity today
+	hasActivityToday, err := r.HasActivityToday(userID)
+	if err != nil {
+		return fmt.Errorf("failed to check today's activity: %w", err)
+	}
+
+	// If user already completed something today, don't update streak
+	if hasActivityToday {
+		return nil
+	}
+
+	// Get current user stats
+	userStats, err := r.GetUserStats(userID)
+	if err != nil {
+		return fmt.Errorf("failed to get user stats: %w", err)
+	}
+
+	today := time.Now().UTC().Truncate(24 * time.Hour)
+
+	// If this is the first activity ever, start streak at 1
+	if userStats.LastActivityDate == nil {
+		return r.updateUserStreak(userID, 1, 1, today)
+	}
+
+	lastActivity := userStats.LastActivityDate.UTC().Truncate(24 * time.Hour)
+
+	// If user completed something yesterday, increment streak
+	yesterday := today.Add(-24 * time.Hour)
+	if lastActivity.Equal(yesterday) {
+		newStreak := userStats.CurrentStreak + 1
+		longestStreak := userStats.LongestStreak
+		if newStreak > longestStreak {
+			longestStreak = newStreak
+		}
+		return r.updateUserStreak(userID, newStreak, longestStreak, today)
+	}
+
+	// If user missed days, reset streak to 1
+	return r.updateUserStreak(userID, 1, userStats.LongestStreak, today)
+}
+
+// updateUserStreak updates the streak fields in the database
+func (r *StatsRepository) updateUserStreak(userID int, currentStreak int, longestStreak int, lastActivityDate time.Time) error {
+	query := `
+		INSERT INTO user_stats (user_id, current_streak, longest_streak, last_activity_date, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+		ON CONFLICT (user_id) 
+		DO UPDATE SET 
+			current_streak = EXCLUDED.current_streak,
+			longest_streak = EXCLUDED.longest_streak,
+			last_activity_date = EXCLUDED.last_activity_date,
+			updated_at = CURRENT_TIMESTAMP`
+
+	_, err := r.db.Exec(query, userID, currentStreak, longestStreak, lastActivityDate)
+	if err != nil {
+		return fmt.Errorf("failed to update user streak: %w", err)
+	}
+
+	return nil
+}
+
+// GetUserStreakInfo returns just the streak information for a user
+func (r *StatsRepository) GetUserStreakInfo(userID int) (currentStreak int, longestStreak int, lastActivityDate *time.Time, err error) {
+	query := `
+		SELECT current_streak, longest_streak, last_activity_date
+		FROM user_stats 
+		WHERE user_id = $1`
+
+	err = r.db.QueryRow(query, userID).Scan(&currentStreak, &longestStreak, &lastActivityDate)
+	if err == sql.ErrNoRows {
+		// User doesn't have stats yet, return defaults
+		return 0, 0, nil, nil
+	}
+	if err != nil {
+		return 0, 0, nil, fmt.Errorf("failed to get user streak info: %w", err)
+	}
+
+	return currentStreak, longestStreak, lastActivityDate, nil
+}
+
+// HasActivityToday checks if the user has already completed an item today
+func (r *StatsRepository) HasActivityToday(userID int) (bool, error) {
+	today := time.Now().UTC().Truncate(24 * time.Hour)
+
+	query := `
+		SELECT last_activity_date
+		FROM user_stats 
+		WHERE user_id = $1`
+
+	var lastActivityDate *time.Time
+	err := r.db.QueryRow(query, userID).Scan(&lastActivityDate)
+	if err == sql.ErrNoRows {
+		// User doesn't have stats yet, so no activity today
+		return false, nil
+	}
+	if err != nil {
+		return false, fmt.Errorf("failed to check user activity: %w", err)
+	}
+
+	// If no activity date recorded, no activity today
+	if lastActivityDate == nil {
+		return false, nil
+	}
+
+	// Check if last activity was today
+	lastActivity := lastActivityDate.UTC().Truncate(24 * time.Hour)
+	return lastActivity.Equal(today), nil
 }

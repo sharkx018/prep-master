@@ -7,6 +7,8 @@ type Stats struct {
 	PendingItems       int     `json:"pending_items"`
 	ProgressPercentage float64 `json:"progress_percentage"`
 	CompletedAllCount  int     `json:"completed_all_count"`
+	CurrentStreak      int     `json:"current_streak"`
+	LongestStreak      int     `json:"longest_streak"`
 }
 
 // AppStats represents the application-level statistics stored in database

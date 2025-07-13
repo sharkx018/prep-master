@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
+import HeaderStreakWidget from './HeaderStreakWidget';
 import { 
   LayoutDashboard, 
   List, 
@@ -107,6 +108,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <h1 className="text-xl font-bold text-white">PrepMaster Pro</h1>
               </div>
             </div>
+            
+            {/* Center - Streak Widget */}
+            <div className="flex-1 flex justify-center">
+              <HeaderStreakWidget />
+            </div>
+            
             <div className="flex items-center space-x-4">
               <a
                 href="https://github.com/sharkx018"

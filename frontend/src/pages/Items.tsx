@@ -216,6 +216,12 @@ const Items: React.FC = () => {
       // Toggle between done and pending, or mark in-progress as done
       const newStatus = currentStatus === 'done' ? 'pending' : 'done';
       await itemsApi.updateStatus(id, newStatus);
+      
+      // Dispatch custom event for widget to refresh if marking as complete
+      if (newStatus === 'done') {
+        window.dispatchEvent(new CustomEvent('itemCompleted'));
+      }
+      
       await fetchItems();
     } catch (err) {
       setError('Failed to update status');

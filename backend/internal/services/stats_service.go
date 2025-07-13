@@ -39,7 +39,7 @@ func (s *StatsService) GetOverallStatsForUser(userID int) (*models.Stats, error)
 		progressPercentage = float64(completed) / float64(total) * 100
 	}
 
-	// Get user-specific completed all count
+	// Get user-specific completed all count and streak info
 	userStats, err := s.statsRepo.GetUserStats(userID)
 	if err != nil {
 		return nil, err
@@ -51,6 +51,8 @@ func (s *StatsService) GetOverallStatsForUser(userID int) (*models.Stats, error)
 		PendingItems:       pending,
 		ProgressPercentage: progressPercentage,
 		CompletedAllCount:  userStats.CompletedAllCount,
+		CurrentStreak:      userStats.CurrentStreak,
+		LongestStreak:      userStats.LongestStreak,
 	}, nil
 }
 

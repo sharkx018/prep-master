@@ -254,6 +254,47 @@ const Stats: React.FC = () => {
           </p>
         </div>
       )}
+
+      {/* Streak Card */}
+      {stats?.overall && (
+        <div className={`mt-6 rounded-lg p-6 ${
+          isDarkMode 
+            ? 'bg-orange-900/30 border border-orange-800' 
+            : 'bg-orange-50'
+        }`}>
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className={`text-lg font-medium mb-2 ${
+                isDarkMode ? 'text-orange-300' : 'text-orange-900'
+              }`}>
+                Daily Streak: {stats.overall.current_streak || 0} day{(stats.overall.current_streak || 0) !== 1 ? 's' : ''}
+              </h3>
+              <p className={`text-sm ${
+                isDarkMode ? 'text-orange-400' : 'text-orange-700'
+              }`}>
+                {stats.overall.current_streak === 0 
+                  ? 'Complete an item today to start your streak!' 
+                  : stats.overall.current_streak === 1 
+                  ? 'Great start! Complete another item tomorrow to continue your streak.'
+                  : `Amazing! You've been consistent for ${stats.overall.current_streak} days in a row.`
+                }
+              </p>
+            </div>
+            <div className="text-right">
+              <div className={`text-2xl font-bold ${
+                isDarkMode ? 'text-orange-300' : 'text-orange-600'
+              }`}>
+                🔥
+              </div>
+              <div className={`text-sm mt-1 ${
+                isDarkMode ? 'text-gray-400' : 'text-gray-600'
+              }`}>
+                Best: {stats.overall.longest_streak || 0}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

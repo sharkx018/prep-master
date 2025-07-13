@@ -13,7 +13,9 @@ import {
   Target,
   Trophy,
   RefreshCw,
-  AlertCircle
+  AlertCircle,
+  Flame,
+  Award
 } from 'lucide-react';
 import { statsApi, itemsApi, Stats } from '../services/api';
 
@@ -47,6 +49,10 @@ const Dashboard: React.FC = () => {
     try {
       setResetting(true);
       await itemsApi.resetAllItems();
+      
+      // Dispatch custom event for widget to refresh
+      window.dispatchEvent(new CustomEvent('itemCompleted'));
+      
       await fetchStats(); // Refresh stats after reset
       setShowResetConfirm(false);
     } catch (err) {
@@ -105,6 +111,24 @@ const Dashboard: React.FC = () => {
       textColor: 'text-yellow-600',
     },
     {
+      title: 'Current Streak',
+      value: stats?.current_streak || 0,
+      icon: Flame,
+      color: 'bg-orange-500',
+      lightColor: 'bg-orange-100',
+      textColor: 'text-orange-600',
+      suffix: stats?.current_streak === 1 ? 'day' : 'days',
+    },
+    {
+      title: 'Longest Streak',
+      value: stats?.longest_streak || 0,
+      icon: Award,
+      color: 'bg-indigo-500',
+      lightColor: 'bg-indigo-100',
+      textColor: 'text-indigo-600',
+      suffix: stats?.longest_streak === 1 ? 'day' : 'days',
+    },
+    {
       title: 'Completion Cycles',
       value: stats?.completed_all_count || 0,
       icon: TrendingUp,
@@ -141,8 +165,62 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
+      {/* Streak Section */}
+      {(stats?.current_streak || 0) > 0 && (
+        <div className={`rounded-xl shadow-lg p-6 mb-8 border transition-colors duration-300 ${
+          isDarkMode 
+            ? 'bg-gradient-to-br from-orange-900/20 to-red-900/20 border-orange-800' 
+            : 'bg-gradient-to-br from-orange-50 to-red-50 border-orange-200'
+        }`}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="relative">
+                <Flame className="h-12 w-12 text-orange-500 animate-pulse" />
+                <div className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center font-bold">
+                  {stats?.current_streak || 0}
+                </div>
+              </div>
+              <div>
+                <h3 className={`text-xl font-bold ${
+                  isDarkMode ? 'text-orange-300' : 'text-orange-800'
+                }`}>
+                  {stats?.current_streak || 0} Day Streak!
+                </h3>
+                <p className={`text-sm ${
+                  isDarkMode ? 'text-orange-400' : 'text-orange-600'
+                }`}>
+                  {stats?.current_streak === 1 
+                    ? 'Great start! Keep it up!' 
+                    : stats?.current_streak && stats.current_streak >= 7
+                    ? 'Amazing consistency! You\'re on fire! 🔥'
+                    : 'Keep the momentum going!'
+                  }
+                </p>
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="flex items-center space-x-2">
+                <Award className="h-6 w-6 text-indigo-500" />
+                <div>
+                  <p className={`text-sm font-medium ${
+                    isDarkMode ? 'text-gray-400' : 'text-gray-600'
+                  }`}>
+                    Best Streak
+                  </p>
+                  <p className={`text-2xl font-bold ${
+                    isDarkMode ? 'text-indigo-300' : 'text-indigo-700'
+                  }`}>
+                    {stats?.longest_streak || 0}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
         {statCards.map((stat) => {
           const Icon = stat.icon;
           return (
@@ -162,7 +240,7 @@ const Dashboard: React.FC = () => {
                       ? 'bg-gradient-to-r from-gray-200 to-gray-400 bg-clip-text text-transparent' 
                       : 'bg-gradient-to-r from-gray-700 to-gray-900 bg-clip-text text-transparent'
                   }`}>
-                    {stat.value}
+                    {stat.value} {stat.suffix}
                   </p>
                 </div>
               </div>
@@ -353,7 +431,7 @@ const Dashboard: React.FC = () => {
               <p className={`mt-1 text-sm ${
                 isDarkMode ? 'text-gray-400' : 'text-gray-600'
               }`}>
-                View and manage all items
+                View all problems and articles
               </p>
             </div>
             <div className={`rounded-full p-2 group-hover:bg-purple-100 transition-colors ${
@@ -368,4 +446,4 @@ const Dashboard: React.FC = () => {
   );
 };
 
-export default Dashboard; 
+export default Dashboard;

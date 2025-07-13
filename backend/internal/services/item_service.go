@@ -360,6 +360,12 @@ func (s *ItemService) CompleteItemWithUserProgress(userID, itemID int) (*models.
 		return nil, err
 	}
 
+	// Update user's daily streak
+	if err := s.statsRepo.UpdateUserStreakOnActivity(userID); err != nil {
+		// Log error but don't fail the completion
+		fmt.Printf("Warning: failed to update user streak for user %d: %v\n", userID, err)
+	}
+
 	// Check if all items are now completed for this user
 	pendingCount, err := s.itemRepo.CountPendingForUser(userID)
 	if err != nil {

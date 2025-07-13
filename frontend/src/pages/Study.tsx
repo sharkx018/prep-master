@@ -9,7 +9,8 @@ import {
   Star,
   Link,
   Hash,
-  Info
+  Info,
+  Flame
 } from 'lucide-react';
 import { itemsApi, statsApi, Item, Stats } from '../services/api';
 
@@ -63,6 +64,10 @@ const Study: React.FC = () => {
     try {
       setCompleting(true);
       await itemsApi.completeItem(currentItem.id);
+      
+      // Dispatch custom event for widget to refresh
+      window.dispatchEvent(new CustomEvent('itemCompleted'));
+      
       // Fetch next item after marking complete
       await fetchNextItem();
       // Refresh stats after completing
@@ -278,6 +283,53 @@ const Study: React.FC = () => {
               Completion cycles: {stats.completed_all_count}
             </p>
           )}
+        </div>
+      )}
+
+      {/* Streak Display */}
+      {stats && (stats.current_streak > 0 || stats.longest_streak > 0) && (
+        <div className={`mb-6 rounded-lg shadow p-4 ${
+          isDarkMode ? 'bg-gradient-to-r from-orange-900/20 to-red-900/20' : 'bg-gradient-to-r from-orange-50 to-red-50'
+        }`}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="relative">
+                <Flame className="h-6 w-6 text-orange-500" />
+                {stats.current_streak > 0 && (
+                  <div className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center font-bold">
+                    {stats.current_streak}
+                  </div>
+                )}
+              </div>
+              <div>
+                <h3 className={`text-sm font-medium ${
+                  isDarkMode ? 'text-orange-300' : 'text-orange-800'
+                }`}>
+                  {stats.current_streak > 0 
+                    ? `${stats.current_streak} day streak!` 
+                    : 'Start your streak today!'
+                  }
+                </h3>
+                <p className={`text-xs ${
+                  isDarkMode ? 'text-orange-400' : 'text-orange-600'
+                }`}>
+                  {stats.current_streak === 0 
+                    ? 'Complete an item to begin' 
+                    : stats.current_streak === 1 
+                    ? 'Keep it up tomorrow!' 
+                    : 'You\'re on fire! 🔥'
+                  }
+                </p>
+              </div>
+            </div>
+            <div className="text-right">
+              <p className={`text-xs ${
+                isDarkMode ? 'text-gray-400' : 'text-gray-600'
+              }`}>
+                Best: {stats.longest_streak || 0}
+              </p>
+            </div>
+          </div>
         </div>
       )}
 
