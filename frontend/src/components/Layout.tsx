@@ -23,6 +23,52 @@ interface LayoutProps {
   children: React.ReactNode;
 }
 
+// Avatar component
+const Avatar: React.FC<{ user: { name: string; avatar?: string } }> = ({ user }) => {
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(word => word.charAt(0))
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  if (user.avatar) {
+    return (
+      <div className="relative">
+        <img
+          src={user.avatar}
+          alt={`${user.name}'s avatar`}
+          className="w-8 h-8 rounded-full object-cover border-2 border-white/30 hover:border-white/50 transition-all duration-200"
+          onError={(e) => {
+            // Fallback to initials if image fails to load
+            const target = e.target as HTMLImageElement;
+            target.style.display = 'none';
+            const parent = target.parentElement;
+            if (parent) {
+              const fallback = document.createElement('div');
+              fallback.className = 'w-8 h-8 rounded-full bg-gradient-to-br from-indigo-400 to-purple-400 flex items-center justify-center text-white text-sm font-semibold border-2 border-white/30 hover:border-white/50 transition-all duration-200';
+              fallback.textContent = getInitials(user.name);
+              parent.appendChild(fallback);
+            }
+          }}
+        />
+        <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-white"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative">
+      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-400 to-purple-400 flex items-center justify-center text-white text-sm font-semibold border-2 border-white/30 hover:border-white/50 transition-all duration-200">
+        {getInitials(user.name)}
+      </div>
+      <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-white"></div>
+    </div>
+  );
+};
+
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const location = useLocation();
   const { user, logout, isAdmin } = useAuth();
@@ -92,10 +138,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <span className="text-sm font-medium">v2.0</span>
               </div>
               {user && (
-                <div className="flex items-center space-x-2 text-white">
-                  <div className="flex items-center bg-white/20 px-3 py-1 rounded-full">
-                    <User className="h-4 w-4 mr-2" />
-                    <span className="text-sm font-medium">{user.name}</span>
+                <div className="flex items-center space-x-3 text-white">
+                  <div className="flex items-center bg-white/20 px-3 py-2 rounded-full hover:bg-white/30 transition-all duration-200">
+                    <Avatar user={user} />
+                    <span className="text-sm font-medium ml-2">{user.name}</span>
                   </div>
                   <button
                     onClick={handleLogout}
