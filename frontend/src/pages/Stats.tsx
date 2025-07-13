@@ -207,7 +207,7 @@ const Stats: React.FC = () => {
                   <div className="space-y-1 text-xs">
                     <div className="flex justify-between">
                       <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>Total:</span>
-                      <span className="font-medium">{sub.total_items}</span>
+                      <span className={`font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{sub.total_items}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>Completed:</span>
