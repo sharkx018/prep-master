@@ -340,29 +340,81 @@ const Items: React.FC = () => {
   const renderAttachments = (attachments: { [key: string]: string }) => {
     if (!attachments || Object.keys(attachments).length === 0) return null;
 
+    // Function to get icon based on key name
+    const getIconForKey = (key: string) => {
+      const lowerKey = key.toLowerCase();
+      if (lowerKey.includes('youtube') || lowerKey.includes('yt') || lowerKey.includes('video')) {
+        return (
+          <svg className="h-3 w-3 text-red-500 mr-1.5 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+          </svg>
+        );
+      } else if (lowerKey.includes('git') || lowerKey.includes('github')) {
+        return (
+          <svg className="h-3 w-3 text-gray-800 dark:text-gray-300 mr-1.5 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+          </svg>
+        );
+      } else {
+        return <ExternalLink className="h-3 w-3 text-gray-500 mr-1.5 flex-shrink-0" />;
+      }
+    };
+
+    // Function to get difficulty color
+    const getDifficultyColor = (value: string) => {
+      const lowerValue = value.toLowerCase();
+      if (lowerValue === 'easy') return 'text-green-600 bg-green-50 border-green-200';
+      if (lowerValue === 'medium' || lowerValue === 'med') return 'text-yellow-600 bg-yellow-50 border-yellow-200';
+      if (lowerValue === 'hard') return 'text-red-600 bg-red-50 border-red-200';
+      return '';
+    };
+
     return (
       <div className="flex flex-wrap gap-2 mt-2">
-        {Object.entries(attachments).map(([key, value]) => (
-          <span key={key} className="inline-flex items-center text-xs">
-            {isValidUrl(value) ? (
-              <a
-                href={value}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-indigo-600 hover:text-indigo-800 underline"
-              >
-                {key}
-              </a>
-            ) : (
-              <span className="text-gray-600">
-                {key}: {value}
-              </span>
-            )}
-            {Object.keys(attachments).indexOf(key) < Object.keys(attachments).length - 1 && (
-              <span className="mx-1 text-gray-400">•</span>
-            )}
-          </span>
-        ))}
+        {Object.entries(attachments).map(([key, value], index) => {
+          const isDifficulty = key.toLowerCase().includes('diff');
+          const difficultyClass = isDifficulty ? getDifficultyColor(value) : '';
+          
+          return (
+            <div key={key} className="inline-flex items-center">
+              {isValidUrl(value) ? (
+                <a
+                  href={value}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium border transition-all duration-200 hover:scale-105 hover:shadow-sm ${
+                    isDarkMode 
+                      ? 'bg-gray-700 border-gray-600 text-gray-200 hover:bg-gray-600 hover:border-gray-500' 
+                      : 'bg-white border-gray-200 text-gray-800 hover:bg-gray-50 hover:border-gray-300'
+                  }`}
+                >
+                  {getIconForKey(key)}
+                  <span className="capitalize">
+                    {key.replace(/[-_]/g, ' ')}
+                  </span>
+                </a>
+              ) : (
+                <div className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium border ${
+                  difficultyClass || (isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-300' : 'bg-gray-50 border-gray-200 text-gray-700')
+                }`}>
+                  {isDifficulty ? (
+                    <>
+                      <span className="capitalize mr-1">{key.replace(/[-_]/g, ' ')}:</span>
+                      <span className={`font-bold capitalize ${difficultyClass.split(' ')[0]}`}>
+                        {value}
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="capitalize mr-1">{key.replace(/[-_]/g, ' ')}:</span>
+                      <span className="font-medium">{value}</span>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     );
   };
