@@ -46,10 +46,10 @@ const HeaderStreakWidget: React.FC = () => {
   if (isLoading || !stats) {
     return (
       <div className="flex items-center space-x-3">
-        <div className={`px-3 py-2 rounded-lg ${
-          isDarkMode ? 'bg-gray-800/30' : 'bg-gray-100/50'
+        <div className={`px-4 py-3 rounded-xl ${
+          isDarkMode ? 'bg-gray-800/50' : 'bg-gray-100/70'
         }`}>
-          <span className="text-xs text-gray-500">Loading...</span>
+          <span className="text-sm font-medium text-gray-500">Loading...</span>
         </div>
       </div>
     );
@@ -67,36 +67,44 @@ const HeaderStreakWidget: React.FC = () => {
     return 'bg-gray-500';
   };
 
+  const getProgressGradient = () => {
+    if (completionPercentage >= 90) return 'from-emerald-500 to-emerald-600';
+    if (completionPercentage >= 75) return 'from-blue-500 to-blue-600';
+    if (completionPercentage >= 50) return 'from-indigo-500 to-indigo-600';
+    if (completionPercentage >= 25) return 'from-orange-500 to-orange-600';
+    return 'from-gray-500 to-gray-600';
+  };
+
   return (
-    <div className="flex items-center space-x-4">
-      {/* Enhanced Streak with Best Streak Indicator */}
-      <div className={`group flex items-center space-x-2 px-3 py-2 rounded-lg transition-all duration-200 hover:scale-105 ${
+    <div className="flex items-center space-x-5">
+      {/* Bold Streak Section */}
+      <div className={`group flex items-center space-x-3 px-4 py-2 rounded-xl transition-all duration-200 hover:scale-105 shadow-lg ${
         isDarkMode 
-          ? 'bg-orange-900/20 border border-orange-800/30 hover:bg-orange-900/30 hover:border-orange-700/50' 
-          : 'bg-orange-50 border border-orange-200 hover:bg-orange-100 hover:border-orange-300'
+          ? 'bg-gradient-to-r from-orange-900/50 to-red-900/40 border-2 border-orange-600/50 hover:border-orange-500/70 shadow-orange-900/30' 
+          : 'bg-gradient-to-r from-orange-100 to-red-100 border-2 border-orange-300 hover:border-orange-400 shadow-orange-200/40'
       }`}>
         <div className="relative">
-          <Flame className={`h-4 w-4 transition-all duration-200 ${
+          <Flame className={`h-5 w-5 transition-all duration-200 drop-shadow-sm ${
             stats.current_streak > 0 
               ? 'text-orange-500 group-hover:text-orange-400' 
               : 'text-orange-400 group-hover:text-orange-300'
           }`} />
           {stats.current_streak > 0 && (
-            <div className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs rounded-full h-3 w-3 flex items-center justify-center font-bold text-[8px] animate-pulse">
+            <div className="absolute -top-1.5 -right-1.5 bg-gradient-to-r from-orange-500 to-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center font-bold text-[9px] animate-pulse shadow-lg">
               {stats.current_streak > 9 ? '9+' : stats.current_streak}
             </div>
           )}
         </div>
         <div className="flex flex-col">
           {/* Current Streak */}
-          <div className="flex items-center space-x-1">
-            <span className={`text-xs font-semibold ${
-              isDarkMode ? 'text-orange-200' : 'text-orange-800'
+          <div className="flex items-center space-x-1.5">
+            <span className={`text-sm font-bold ${
+              isDarkMode ? 'text-orange-100' : 'text-orange-900'
             }`}>
               {stats.current_streak}
             </span>
-            <span className={`text-[10px] ${
-              isDarkMode ? 'text-orange-300/80' : 'text-orange-600/80'
+            <span className={`text-xs font-semibold ${
+              isDarkMode ? 'text-orange-200' : 'text-orange-700'
             }`}>
               {stats.current_streak === 1 ? 'day' : 'days'}
             </span>
@@ -104,72 +112,72 @@ const HeaderStreakWidget: React.FC = () => {
           {/* Best Streak Indicator */}
           {stats.longest_streak > 0 && (
             <div className="flex items-center space-x-1">
-              <span className={`text-[9px] ${
-                isDarkMode ? 'text-orange-400/60' : 'text-orange-500/60'
+              <span className={`text-[10px] font-medium ${
+                isDarkMode ? 'text-orange-300/80' : 'text-orange-600/80'
               }`}>
                 best:
               </span>
-              <span className={`text-[9px] font-medium ${
-                isDarkMode ? 'text-orange-300/70' : 'text-orange-600/70'
+              <span className={`text-[10px] font-bold ${
+                isDarkMode ? 'text-orange-200/90' : 'text-orange-700/90'
               }`}>
                 {stats.longest_streak}
               </span>
               {stats.current_streak === stats.longest_streak && (
-                <span className="text-[8px]">🏆</span>
+                <span className="text-[10px]">🏆</span>
               )}
             </div>
           )}
         </div>
       </div>
 
-      {/* Enhanced Progress */}
-      <div className={`group flex items-center space-x-3 px-3 py-2 rounded-lg transition-all duration-200 hover:scale-105 ${
+      {/* Bold Progress Section */}
+      <div className={`group flex items-center space-x-3 px-4 py-2 rounded-xl transition-all duration-200 hover:scale-105 shadow-lg ${
         isDarkMode 
-          ? 'bg-blue-900/20 border border-blue-800/30 hover:bg-blue-900/30 hover:border-blue-700/50' 
-          : 'bg-blue-50 border border-blue-200 hover:bg-blue-100 hover:border-blue-300'
+          ? 'bg-gradient-to-r from-blue-900/50 to-indigo-900/40 border-2 border-blue-600/50 hover:border-blue-500/70 shadow-blue-900/30' 
+          : 'bg-gradient-to-r from-blue-100 to-indigo-100 border-2 border-blue-300 hover:border-blue-400 shadow-blue-200/40'
       }`}>
         <div className="relative">
-          <Trophy className={`h-4 w-4 transition-all duration-200 ${
+          <Trophy className={`h-5 w-5 transition-all duration-200 drop-shadow-sm ${
             completionPercentage >= 90 
               ? 'text-yellow-500 group-hover:text-yellow-400' 
               : 'text-blue-500 group-hover:text-blue-400'
           }`} />
           {completionPercentage >= 90 && (
-            <div className="absolute -inset-1 bg-yellow-400/20 rounded-full animate-ping"></div>
+            <div className="absolute -inset-1.5 bg-yellow-400/30 rounded-full animate-ping"></div>
           )}
         </div>
         
-        <div className="flex flex-col space-y-1">
+        <div className="flex flex-col space-y-1.5">
           <div className="flex items-center space-x-2">
-            <span className={`text-xs font-semibold ${
-              isDarkMode ? 'text-blue-200' : 'text-blue-800'
+            <span className={`text-sm font-bold ${
+              isDarkMode ? 'text-blue-100' : 'text-blue-900'
             }`}>
               {completionPercentage.toFixed(1)}%
             </span>
-            <span className={`text-[10px] ${
-              isDarkMode ? 'text-blue-300/80' : 'text-blue-600/80'
+            <span className={`text-xs font-semibold ${
+              isDarkMode ? 'text-blue-200' : 'text-blue-700'
             }`}>
               {stats.completed_items}/{stats.total_items}
             </span>
           </div>
           
-          {/* Enhanced progress bar */}
-          <div className={`w-16 h-1.5 rounded-full ${
+          {/* Bold progress bar */}
+          <div className={`w-20 h-2 rounded-full ${
             isDarkMode ? 'bg-gray-700' : 'bg-gray-300'
-          } overflow-hidden`}>
+          } overflow-hidden shadow-inner`}>
             <div 
-              className={`h-full rounded-full transition-all duration-500 ${getProgressColor()}`}
+              className={`h-full rounded-full bg-gradient-to-r ${getProgressGradient()} transition-all duration-500 shadow-sm`}
               style={{ width: `${Math.min(completionPercentage, 100)}%` }}
             />
-            {/* Progress milestones */}
-            <div className="relative -mt-1.5 flex justify-between w-16">
-              <div className={`w-0.5 h-0.5 rounded-full ${
+            {/* Bold progress milestones */}
+            <div className="relative -mt-2 flex justify-between w-20">
+              <div className={`w-1 h-1 rounded-full shadow-sm ${
                 completionPercentage >= 25 ? getProgressColor() : 'bg-gray-400'
               }`}></div>
-              <div className={`w-0.5 h-0.5 rounded-full ${
+              <div className={`w-1 h-1 rounded-full shadow-sm ${
                 completionPercentage >= 50 ? getProgressColor() : 'bg-gray-400'
               }`}></div>
-              <div className={`w-0.5 h-0.5 rounded-full ${
+              <div className={`w-1 h-1 rounded-full shadow-sm ${
                 completionPercentage >= 75 ? getProgressColor() : 'bg-gray-400'
               }`}></div>
             </div>
@@ -177,18 +185,18 @@ const HeaderStreakWidget: React.FC = () => {
         </div>
       </div>
 
-      {/* Enhanced Refresh */}
+      {/* Bold Refresh Button */}
       <button
         onClick={handleManualRefresh}
         disabled={isRefreshing}
-        className={`group p-2 rounded-lg transition-all duration-200 hover:scale-110 ${
+        className={`group px-3 py-2 rounded-xl transition-all duration-200 hover:scale-110 shadow-lg ${
           isDarkMode
-            ? 'hover:bg-gray-800/50 text-gray-400 hover:text-gray-300'
-            : 'hover:bg-gray-100/50 text-gray-500 hover:text-gray-700'
+            ? 'bg-gray-800/50 hover:bg-gray-700/60 text-gray-300 hover:text-white border-2 border-gray-600/50 hover:border-gray-500/70 shadow-gray-900/30'
+            : 'bg-gray-100/70 hover:bg-gray-200/80 text-gray-600 hover:text-gray-800 border-2 border-gray-300 hover:border-gray-400 shadow-gray-200/40'
         } disabled:opacity-50 disabled:cursor-not-allowed`}
         title="Refresh stats"
       >
-        <RefreshCw className={`h-4 w-4 transition-all duration-200 ${
+        <RefreshCw className={`h-5 w-5 transition-all duration-200 drop-shadow-sm ${
           isRefreshing ? 'animate-spin' : 'group-hover:rotate-180'
         }`} />
       </button>
