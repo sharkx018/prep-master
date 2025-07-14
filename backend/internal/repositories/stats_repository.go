@@ -144,6 +144,12 @@ func (r *StatsRepository) GetUserStats(userID int) (*models.UserStats, error) {
 		return nil, fmt.Errorf("failed to get user stats: %w", err)
 	}
 
+	// Check and reset streak if there's a gap of 24+ hours
+	err = r.checkAndResetStreakIfNeeded(&stats)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check and reset streak: %w", err)
+	}
+
 	return &stats, nil
 }
 
@@ -232,7 +238,7 @@ func (r *StatsRepository) UpdateUserStreakOnActivity(userID int) error {
 		return r.updateUserStreak(userID, newStreak, longestStreak, today)
 	}
 
-	// If user missed days, reset streak to 1
+	// If user missed days, reset streak to 1 (since they're completing an item today)
 	return r.updateUserStreak(userID, 1, userStats.LongestStreak, today)
 }
 
@@ -302,4 +308,48 @@ func (r *StatsRepository) HasActivityToday(userID int) (bool, error) {
 	// Check if last activity was today
 	lastActivity := lastActivityDate.UTC().Truncate(24 * time.Hour)
 	return lastActivity.Equal(today), nil
+}
+
+// checkAndResetStreakIfNeeded checks if the user's streak should be reset to 0 due to inactivity
+func (r *StatsRepository) checkAndResetStreakIfNeeded(stats *models.UserStats) error {
+	// If no last activity date or current streak is already 0, nothing to check
+	if stats.LastActivityDate == nil || stats.CurrentStreak == 0 {
+		return nil
+	}
+
+	now := time.Now().UTC()
+	today := now.Truncate(24 * time.Hour)
+	lastActivity := stats.LastActivityDate.UTC().Truncate(24 * time.Hour)
+
+	// Calculate days since last activity
+	daysSinceLastActivity := int(today.Sub(lastActivity).Hours() / 24)
+
+	// If there's a gap of 1 or more days, reset streak to 0
+	if daysSinceLastActivity >= 1 {
+		// Update the streak in the database
+		err := r.resetUserStreak(stats.UserID)
+		if err != nil {
+			return fmt.Errorf("failed to reset user streak: %w", err)
+		}
+
+		// Update the stats object to reflect the reset
+		stats.CurrentStreak = 0
+	}
+
+	return nil
+}
+
+// resetUserStreak resets the user's current streak to 0
+func (r *StatsRepository) resetUserStreak(userID int) error {
+	query := `
+		UPDATE user_stats 
+		SET current_streak = 0, updated_at = CURRENT_TIMESTAMP
+		WHERE user_id = $1`
+
+	_, err := r.db.Exec(query, userID)
+	if err != nil {
+		return fmt.Errorf("failed to reset user streak: %w", err)
+	}
+
+	return nil
 }

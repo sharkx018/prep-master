@@ -10,7 +10,7 @@ The daily streak feature encourages users to maintain consistent daily study hab
 
 - **Daily Streak Tracking**: Automatically tracks consecutive days of study activity
 - **Streak Calculation**: Increments streak when users complete items on consecutive days
-- **Streak Reset**: Resets to 1 when users miss a day (not 0, to encourage immediate restart)
+- **Streak Reset**: Resets to 0 when users miss a day (automatically detected when viewing stats)
 - **Longest Streak**: Tracks the user's best streak achievement
 - **Activity Deduplication**: Prevents multiple streak updates on the same day
 
@@ -18,9 +18,25 @@ The daily streak feature encourages users to maintain consistent daily study hab
 
 1. **First Activity**: When a user completes their first item ever, streak starts at 1
 2. **Consecutive Days**: If user completed items yesterday and completes one today, streak increments
-3. **Missed Days**: If user's last activity was 2+ days ago, streak resets to 1
+3. **Missed Days**: If user's last activity was 1+ days ago, streak resets to 0 (when viewing stats) or 1 (when completing an item)
 4. **Same Day**: Multiple completions on the same day don't affect streak count
 5. **Longest Streak**: Automatically updates when current streak exceeds previous best
+
+## Streak Reset Behavior
+
+The streak reset logic works differently depending on the context:
+
+### When Viewing Stats (GetUserStats)
+- **Automatic Reset**: Streak is automatically reset to 0 if there's a gap of 24+ hours since last activity
+- **Real-time**: The reset happens immediately when stats are requested
+- **Database Update**: The streak is updated in the database to reflect the reset
+
+### When Completing Items (UpdateUserStreakOnActivity)
+- **Activity-based Reset**: If user completes an item after missing days, streak resets to 1 (since they're completing an item that day)
+- **Consecutive Days**: If user completed items yesterday and completes one today, streak increments
+- **Same Day Protection**: Multiple completions on the same day don't affect streak count
+
+This dual approach ensures users always see accurate streak information while rewarding them appropriately when they resume activity.
 
 ## Implementation Details
 
@@ -47,6 +63,15 @@ last_activity_date DATE,
 **`HasActivityToday(userID int)`**
 - Checks if user has already completed an item today
 - Prevents multiple streak updates on the same day
+
+**`checkAndResetStreakIfNeeded(stats *UserStats)`**
+- Automatically checks if streak should be reset when viewing stats
+- Resets current streak to 0 if there's a gap of 24+ hours since last activity
+- Updates the database and stats object in real-time
+
+**`resetUserStreak(userID int)`**
+- Helper method to reset user's current streak to 0 in the database
+- Called when a streak gap is detected
 
 **`GetUserStreakInfo(userID int)`**
 - Retrieves current streak, longest streak, and last activity date
