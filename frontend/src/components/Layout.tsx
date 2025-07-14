@@ -23,56 +23,44 @@ import {
 
 // CompletionStars component
 const CompletionStars: React.FC<{ completionCycles: number }> = ({ completionCycles }) => {
-  const renderStars = () => {
-    const stars = [];
-    const maxStars = 5; // Show maximum 5 stars, then show number
-    
-    if (completionCycles === 0) {
+  const getRankInfo = (count: number) => {
+    if (count === 0) return { title: 'Newbie', color: 'text-gray-400' };
+    if (count === 1) return { title: 'Pupil', color: 'text-green-400' };
+    if (count === 2) return { title: 'Specialist', color: 'text-cyan-400' };
+    if (count === 3) return { title: 'Expert', color: 'text-blue-400' };
+    if (count === 4) return { title: 'Candidate Master', color: 'text-violet-400' };
+    if (count === 5) return { title: 'Master', color: 'text-orange-400' };
+    if (count === 6) return { title: 'International Master', color: 'text-orange-400' };
+    if (count === 7) return { title: 'Grandmaster', color: 'text-red-400' };
+    if (count >= 10 && count < 15) return { title: 'International Grandmaster', color: 'text-red-400' };
+    if (count >= 15) return { title: 'Legendary Grandmaster', color: 'text-red-400', isLegendary: true };
+    // For counts 8-9, use Grandmaster
+    return { title: 'Grandmaster', color: 'text-red-400' };
+  };
+
+  const rankInfo = getRankInfo(completionCycles);
+
+  const renderTitle = () => {
+    if (rankInfo.isLegendary) {
       return (
-        <div className="flex items-center space-x-1 bg-white/10 px-2 py-1 rounded-lg border border-white/20">
-          <Star className="h-5 w-5 text-gray-300 stroke-2" />
-          <span className="text-sm text-gray-300 font-bold">0</span>
-        </div>
-      );
-    }
-    
-    if (completionCycles <= maxStars) {
-      // Show individual stars for cycles 1-5
-      for (let i = 0; i < completionCycles; i++) {
-        stars.push(
-          <Star
-            key={i}
-            className="h-5 w-5 text-yellow-300 fill-yellow-300 stroke-2 drop-shadow-lg"
-          />
-        );
-      }
-    } else {
-      // Show 5 stars + number for cycles > 5
-      for (let i = 0; i < maxStars; i++) {
-        stars.push(
-          <Star
-            key={i}
-            className="h-5 w-5 text-yellow-300 fill-yellow-300 stroke-2 drop-shadow-lg"
-          />
-        );
-      }
-      stars.push(
-        <span key="number" className="text-sm text-yellow-300 font-bold ml-1 drop-shadow-lg">
-          {completionCycles}
+        <span className="text-sm font-bold text-white drop-shadow-lg">
+          <span className="text-white">L</span>
+          <span className="text-white">egendary Grandmaster</span>
         </span>
       );
     }
-    
     return (
-      <div className="flex items-center space-x-0.5 bg-white/10 px-2 py-1 rounded-lg border border-white/20 shadow-lg">
-        {stars}
-      </div>
+      <span className="text-sm font-bold text-white drop-shadow-lg">
+        {rankInfo.title}
+      </span>
     );
   };
 
   return (
-    <div className="flex items-center" title={`${completionCycles} Completion Cycles`}>
-      {renderStars()}
+    <div className="flex items-center" title={`${completionCycles} Completion Cycles - ${rankInfo.title}`}>
+      <div className="flex items-center bg-white/10 px-3 py-1.5 rounded-lg border border-white/20 shadow-lg">
+        {renderTitle()}
+      </div>
     </div>
   );
 };
@@ -234,7 +222,33 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <div className="flex items-center space-x-3 text-white">
                   <div className="flex items-center bg-white/20 px-3 py-2 rounded-full hover:bg-white/30 transition-all duration-200">
                     <Avatar user={user} />
-                    <span className="text-sm font-medium ml-2">{user.name}</span>
+                    <span className="text-sm font-bold ml-2">
+                      {(() => {
+                        const count = stats?.completed_all_count || 0;
+                        if (count >= 15) {
+                          // Legendary Grandmaster: First letter black, rest red
+                          return (
+                            <>
+                              <span className="text-black">{user.name.charAt(0)}</span>
+                              <span className="text-red-500">{user.name.slice(1)}</span>
+                            </>
+                          );
+                        }
+                        // Regular color for other ranks
+                        const colorClass = (() => {
+                          if (count === 0) return 'text-gray-300';
+                          if (count === 1) return 'text-green-300';
+                          if (count === 2) return 'text-cyan-300';
+                          if (count === 3) return 'text-blue-400';
+                          if (count === 4) return 'text-purple-300';
+                          if (count === 5) return 'text-orange-300';
+                          if (count === 6) return 'text-orange-300';
+                          if (count >= 7) return 'text-red-400';
+                          return 'text-white';
+                        })();
+                        return <span className={colorClass}>{user.name}</span>;
+                      })()}
+                    </span>
                   </div>
                   <CompletionStars completionCycles={stats?.completed_all_count || 0} />
                   <button

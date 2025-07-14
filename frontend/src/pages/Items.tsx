@@ -687,7 +687,14 @@ const Items: React.FC = () => {
                           <Star className="h-4 w-4 text-yellow-500 fill-current" />
                         )}
                       </div>
-                      <h3 className={`text-sm font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{item.title}</h3>
+                      <a
+                        href={item.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`text-sm font-medium hover:underline ${isDarkMode ? 'text-gray-100 hover:text-indigo-400' : 'text-gray-900 hover:text-indigo-600'}`}
+                      >
+                        {item.title}
+                      </a>
                       <p className={`text-sm mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                         Added on {formatDate(item.created_at)}
                         {item.completed_at && ` • Completed on ${formatDate(item.completed_at)}`}
