@@ -1,4 +1,4 @@
-# 🚀 PrepMaster Pro - Interview Preparation Platform
+# 🚀 PrepForces - Interview Preparation Platform
 
 <div align="center">
   <img src="https://img.shields.io/badge/Version-1.0-blue.svg" alt="Version 1.0">
@@ -16,7 +16,7 @@
 
 ## ✨ Overview
 
-**PrepMaster Pro** is a modern, full-stack interview preparation platform designed to help software engineers systematically prepare for technical interviews. Track your progress across Data Structures & Algorithms, Low-Level Design, and High-Level Design topics with a beautiful, intuitive interface.
+**PrepForces** is a modern, full-stack interview preparation platform designed to help software engineers systematically prepare for technical interviews. Track your progress across Data Structures & Algorithms, Low-Level Design, and High-Level Design topics with a beautiful, intuitive interface.
 
 ## 🎨 Features
 

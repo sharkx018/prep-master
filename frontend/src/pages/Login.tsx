@@ -91,7 +91,7 @@ const Login: React.FC = () => {
                 <Sparkles className="h-4 w-4 text-yellow-300 absolute -top-1 -right-1" />
               </div>
               <div className="ml-4">
-                <h1 className="text-xl font-bold text-white">PrepMaster Pro</h1>
+                <h1 className="text-xl font-bold text-white">PrepForces</h1>
               </div>
             </div>
             <div className="flex items-center space-x-4">
@@ -158,7 +158,7 @@ const Login: React.FC = () => {
                   ? 'Start your interview preparation journey' 
                   : (
                     <>
-                      Sign in to access your <span className="text-indigo-400 font-medium">PrepMaster Pro</span> dashboard
+                      Sign in to access your <span className="text-indigo-400 font-medium">PrepForces</span> dashboard
                     </>
                   )
                 }
@@ -285,7 +285,7 @@ const Login: React.FC = () => {
                   ) : (
                     <div className="flex items-center">
                       <Lock className="h-4 w-4 mr-2" />
-                      {isRegister ? 'Create Account' : 'Sign in to PrepMaster Pro'}
+                      {isRegister ? 'Create Account' : 'Sign in to PrepForces'}
                     </div>
                   )}
                 </button>
