@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import HeaderStreakWidget from './HeaderStreakWidget';
+import { statsApi, Stats } from '../services/api';
 import { 
   LayoutDashboard, 
   List, 
@@ -15,10 +16,66 @@ import {
   Linkedin,
   Code2,
   LogOut,
-  User,
   Moon,
-  Sun
+  Sun,
+  Star
 } from 'lucide-react';
+
+// CompletionStars component
+const CompletionStars: React.FC<{ completionCycles: number }> = ({ completionCycles }) => {
+  const renderStars = () => {
+    const stars = [];
+    const maxStars = 5; // Show maximum 5 stars, then show number
+    
+    if (completionCycles === 0) {
+      return (
+        <div className="flex items-center space-x-1 bg-white/10 px-2 py-1 rounded-lg border border-white/20">
+          <Star className="h-5 w-5 text-gray-300 stroke-2" />
+          <span className="text-sm text-gray-300 font-bold">0</span>
+        </div>
+      );
+    }
+    
+    if (completionCycles <= maxStars) {
+      // Show individual stars for cycles 1-5
+      for (let i = 0; i < completionCycles; i++) {
+        stars.push(
+          <Star
+            key={i}
+            className="h-5 w-5 text-yellow-300 fill-yellow-300 stroke-2 drop-shadow-lg"
+          />
+        );
+      }
+    } else {
+      // Show 5 stars + number for cycles > 5
+      for (let i = 0; i < maxStars; i++) {
+        stars.push(
+          <Star
+            key={i}
+            className="h-5 w-5 text-yellow-300 fill-yellow-300 stroke-2 drop-shadow-lg"
+          />
+        );
+      }
+      stars.push(
+        <span key="number" className="text-sm text-yellow-300 font-bold ml-1 drop-shadow-lg">
+          {completionCycles}
+        </span>
+      );
+    }
+    
+    return (
+      <div className="flex items-center space-x-0.5 bg-white/10 px-2 py-1 rounded-lg border border-white/20 shadow-lg">
+        {stars}
+      </div>
+    );
+  };
+
+  return (
+    <div className="flex items-center" title={`${completionCycles} Completion Cycles`}>
+      {renderStars()}
+    </div>
+  );
+};
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -74,6 +131,35 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const location = useLocation();
   const { user, logout, isAdmin } = useAuth();
   const { isDarkMode, toggleTheme } = useTheme();
+  const [stats, setStats] = useState<Stats | null>(null);
+
+  const fetchStats = useCallback(async () => {
+    try {
+      const data = await statsApi.getStats();
+      setStats(data);
+    } catch (err) {
+      console.error('Failed to fetch stats:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (user) {
+      fetchStats();
+      
+      const interval = setInterval(() => fetchStats(), 30000);
+      
+      const handleItemCompletion = () => {
+        setTimeout(() => fetchStats(), 500);
+      };
+
+      window.addEventListener('itemCompleted', handleItemCompletion);
+      
+      return () => {
+        clearInterval(interval);
+        window.removeEventListener('itemCompleted', handleItemCompletion);
+      };
+    }
+  }, [user, fetchStats]);
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -150,6 +236,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     <Avatar user={user} />
                     <span className="text-sm font-medium ml-2">{user.name}</span>
                   </div>
+                  <CompletionStars completionCycles={stats?.completed_all_count || 0} />
                   <button
                     onClick={handleLogout}
                     className="p-2 text-white/80 hover:text-white hover:bg-white/20 rounded-full transition-colors"
