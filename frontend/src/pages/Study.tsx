@@ -34,6 +34,7 @@ const Study: React.FC = () => {
 
   useEffect(() => {
     fetchStats();
+    fetchNextItem();
   }, []);
 
   const fetchNextItem = async () => {
