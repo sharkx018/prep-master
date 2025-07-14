@@ -43,14 +43,14 @@ const CompletionStars: React.FC<{ completionCycles: number }> = ({ completionCyc
   const renderTitle = () => {
     if (rankInfo.isLegendary) {
       return (
-        <span className="text-sm font-bold text-white drop-shadow-lg">
+        <span className="text-xs font-bold text-white drop-shadow-lg">
           <span className="text-white">L</span>
           <span className="text-white">egendary Grandmaster</span>
         </span>
       );
     }
     return (
-      <span className="text-sm font-bold text-white drop-shadow-lg">
+      <span className="text-xs font-bold text-white drop-shadow-lg">
         {rankInfo.title}
       </span>
     );
