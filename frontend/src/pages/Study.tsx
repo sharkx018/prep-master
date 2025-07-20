@@ -13,6 +13,7 @@ import {
   Flame
 } from 'lucide-react';
 import { itemsApi, statsApi, Item, Stats } from '../services/api';
+import MotivationalQuote from '../components/MotivationalQuote';
 
 const Study: React.FC = () => {
   const { isDarkMode } = useTheme();
@@ -255,6 +256,9 @@ const Study: React.FC = () => {
 
   return (
     <div>
+      {/* Motivational Quote */}
+      <MotivationalQuote />
+      
       <div className="mb-8">
         <h2 className={`text-2xl font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Study Mode</h2>
         <p className={`mt-1 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>

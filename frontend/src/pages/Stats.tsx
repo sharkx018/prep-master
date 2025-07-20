@@ -15,6 +15,7 @@ import {
 } from 'recharts';
 import { Loader2 } from 'lucide-react';
 import { statsApi, DetailedStats } from '../services/api';
+import MotivationalQuote from '../components/MotivationalQuote';
 
 const Stats: React.FC = () => {
   const { isDarkMode } = useTheme();
@@ -88,6 +89,9 @@ const Stats: React.FC = () => {
 
   return (
     <div>
+      {/* Motivational Quote */}
+      <MotivationalQuote />
+      
       <div className="mb-8">
         <h2 className={`text-2xl font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Statistics</h2>
         <p className={`mt-1 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>

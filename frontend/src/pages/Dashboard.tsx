@@ -18,6 +18,7 @@ import {
   Award
 } from 'lucide-react';
 import { statsApi, itemsApi, Stats } from '../services/api';
+import MotivationalQuote from '../components/MotivationalQuote';
 
 const Dashboard: React.FC = () => {
   const { isDarkMode } = useTheme();
@@ -140,6 +141,9 @@ const Dashboard: React.FC = () => {
 
   return (
     <div>
+      {/* Motivational Quote */}
+      <MotivationalQuote />
+      
       <div className="mb-8">
         <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl p-8 text-white shadow-xl relative overflow-hidden">
           <div className="absolute top-0 right-0 -mt-4 -mr-4 opacity-20">

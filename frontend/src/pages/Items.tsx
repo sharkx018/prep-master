@@ -17,6 +17,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { itemsApi, Item, UpdateItemRequest, PaginationMeta } from '../services/api';
+import MotivationalQuote from '../components/MotivationalQuote';
 
 const Items: React.FC = () => {
   const { isDarkMode } = useTheme();
@@ -421,6 +422,9 @@ const Items: React.FC = () => {
 
   return (
     <div>
+      {/* Motivational Quote */}
+      <MotivationalQuote />
+      
       <div className="mb-8">
         <h2 className={`text-2xl font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>All Items</h2>
         <p className={`mt-1 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
@@ -915,4 +919,4 @@ const Items: React.FC = () => {
   );
 };
 
-export default Items; 
+export default Items;
