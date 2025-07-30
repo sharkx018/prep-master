@@ -266,7 +266,7 @@ const Study: React.FC = () => {
         </p>
       </div>
 
-      {/* Progress Bar */}
+      {/* Progress Bar
       {stats && (
         <div className={`mb-6 rounded-lg shadow p-4 ${
           isDarkMode ? 'bg-gray-800' : 'bg-white'
@@ -289,9 +289,9 @@ const Study: React.FC = () => {
             </p>
           )}
         </div>
-      )}
+      )} */}
 
-      {/* Streak Display */}
+      {/* Streak Display
       {stats && (stats.current_streak > 0 || stats.longest_streak > 0) && (
         <div className={`mb-6 rounded-lg shadow p-4 ${
           isDarkMode ? 'bg-gradient-to-r from-orange-900/20 to-red-900/20' : 'bg-gradient-to-r from-orange-50 to-red-50'
@@ -336,7 +336,7 @@ const Study: React.FC = () => {
             </div>
           </div>
         </div>
-      )}
+      )} */}
 
       {error && (
         <div className={`mb-6 border px-4 py-3 rounded-lg flex items-center ${

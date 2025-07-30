@@ -141,8 +141,7 @@ const Dashboard: React.FC = () => {
 
   return (
     <div>
-      {/* Motivational Quote */}
-      <MotivationalQuote />
+      
       
       <div className="mb-8">
         <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl p-8 text-white shadow-xl relative overflow-hidden">
@@ -158,19 +157,68 @@ const Dashboard: React.FC = () => {
               Welcome back, {user?.name || 'User'}!
             </p>
             <div className="flex items-center space-x-2">
-              <Sparkles className="h-5 w-5 text-yellow-300" />
+              {/* <Sparkles className="h-5 w-5 text-yellow-300" /> */}
               <span className="text-sm font-medium text-indigo-200">
                 {stats?.completed_all_count > 0 
                   ? `Amazing! You've completed ${stats.completed_all_count} full cycles!` 
-                  : 'You will have to hang tough thru this period, but all lies ahead of you, donot stop until you got answers to all question and make your life a success story!'}
+                  : ''}
               </span>
             </div>
           </div>
         </div>
       </div>
 
+      {/* Motivational Quote */}
+      <MotivationalQuote />
+
+      {/* Progress Bar */}
+      <div className={`rounded-xl shadow-lg p-8 mb-8 border transition-colors duration-300 ${
+        isDarkMode 
+          ? 'bg-gradient-to-br from-gray-800 to-gray-700 border-gray-600' 
+          : 'bg-gradient-to-br from-white to-indigo-50 border-indigo-100'
+      }`}>
+        <div className="flex items-center justify-between mb-6">
+          <h3 className={`text-xl font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Overall Progress</h3>
+          <div className="flex items-center space-x-2">
+            {(stats?.progress_percentage || 0) >= 80 && <Trophy className="h-6 w-6 text-yellow-500" />}
+            {(stats?.progress_percentage || 0) >= 50 && (stats?.progress_percentage || 0) < 80 && <Target className="h-6 w-6 text-blue-500" />}
+            {(stats?.progress_percentage || 0) < 50 && <Clock className="h-6 w-6 text-gray-500" />}
+          </div>
+        </div>
+        <div className="relative">
+          <div className="flex mb-3 items-center justify-between">
+            <div>
+              <span className={`text-sm font-bold ${
+                isDarkMode ? 'text-indigo-300' : 'text-indigo-700'
+              }`}>
+                {stats?.completed_items || 0} of {stats?.total_items || 0} items completed
+              </span>
+            </div>
+            <div className="text-right">
+              <span className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                {(stats?.progress_percentage || 0).toFixed(1)}%
+              </span>
+            </div>
+          </div>
+          <div className={`overflow-hidden h-4 text-xs flex rounded-full shadow-inner ${
+            isDarkMode ? 'bg-gray-600' : 'bg-gray-200'
+          }`}>
+            <div
+              style={{ width: `${stats?.progress_percentage || 0}%` }}
+              className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-1000 ease-out rounded-full"
+            />
+          </div>
+          {(stats?.progress_percentage || 0) === 100 && (
+            <p className="mt-3 text-sm font-medium text-green-600 flex items-center">
+              <CheckCircle className="h-4 w-4 mr-1" />
+              Congratulations! You've completed all items!
+            </p>
+          )}
+        </div>
+      </div>
+
       {/* Streak Section */}
-      {(stats?.current_streak || 0) > 0 && (
+      {/* {(stats?.current_streak || 0) > 0 && (
         <div className={`rounded-xl shadow-lg p-6 mb-8 border transition-colors duration-300 ${
           isDarkMode 
             ? 'bg-gradient-to-br from-orange-900/20 to-red-900/20 border-orange-800' 
@@ -221,7 +269,7 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
         </div>
-      )}
+      )} */}
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
@@ -253,51 +301,7 @@ const Dashboard: React.FC = () => {
         })}
       </div>
 
-      {/* Progress Bar */}
-      <div className={`rounded-xl shadow-lg p-8 mb-8 border transition-colors duration-300 ${
-        isDarkMode 
-          ? 'bg-gradient-to-br from-gray-800 to-gray-700 border-gray-600' 
-          : 'bg-gradient-to-br from-white to-indigo-50 border-indigo-100'
-      }`}>
-        <div className="flex items-center justify-between mb-6">
-          <h3 className={`text-xl font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Overall Progress</h3>
-          <div className="flex items-center space-x-2">
-            {(stats?.progress_percentage || 0) >= 80 && <Trophy className="h-6 w-6 text-yellow-500" />}
-            {(stats?.progress_percentage || 0) >= 50 && (stats?.progress_percentage || 0) < 80 && <Target className="h-6 w-6 text-blue-500" />}
-            {(stats?.progress_percentage || 0) < 50 && <Clock className="h-6 w-6 text-gray-500" />}
-          </div>
-        </div>
-        <div className="relative">
-          <div className="flex mb-3 items-center justify-between">
-            <div>
-              <span className={`text-sm font-bold ${
-                isDarkMode ? 'text-indigo-300' : 'text-indigo-700'
-              }`}>
-                {stats?.completed_items || 0} of {stats?.total_items || 0} items completed
-              </span>
-            </div>
-            <div className="text-right">
-              <span className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                {(stats?.progress_percentage || 0).toFixed(1)}%
-              </span>
-            </div>
-          </div>
-          <div className={`overflow-hidden h-4 text-xs flex rounded-full shadow-inner ${
-            isDarkMode ? 'bg-gray-600' : 'bg-gray-200'
-          }`}>
-            <div
-              style={{ width: `${stats?.progress_percentage || 0}%` }}
-              className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-1000 ease-out rounded-full"
-            />
-          </div>
-          {(stats?.progress_percentage || 0) === 100 && (
-            <p className="mt-3 text-sm font-medium text-green-600 flex items-center">
-              <CheckCircle className="h-4 w-4 mr-1" />
-              Congratulations! You've completed all items!
-            </p>
-          )}
-        </div>
-      </div>
+      
 
       {/* Reset Section */}
       <div className="mb-8">
