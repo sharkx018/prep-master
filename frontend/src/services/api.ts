@@ -115,6 +115,20 @@ export interface PaginatedItemsResponse {
   pagination: PaginationMeta;
 }
 
+export interface LeetCodeContest {
+  title: string;
+  titleSlug: string;
+  startTime: number;
+  duration: number;
+  isVirtual: boolean;
+}
+
+export interface LeetCodeContestsResponse {
+  data: {
+    allContests: LeetCodeContest[];
+  };
+}
+
 // API calls
 export const itemsApi = {
   // Get all items with optional filters
@@ -257,6 +271,24 @@ export const statsApi = {
     const response = await api.post('/stats/reset-completed-all');
     return response.data;
   },
+};
+
+export const leetcodeApi = {
+  // Get all contests
+  getContests: async () => {
+    try {
+      // Use our backend proxy to avoid CORS issues
+      const response = await api.post('/leetcode/proxy', {
+        query: "{ allContests { title titleSlug startTime duration isVirtual } }",
+        variables: {}
+      });
+      
+      return response.data.data.allContests;
+    } catch (error) {
+      console.error("Failed to fetch LeetCode contests:", error);
+      throw error;
+    }
+  }
 };
 
 export default api; 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, Outlet } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import HeaderStreakWidget from './HeaderStreakWidget';
@@ -18,7 +18,8 @@ import {
   LogOut,
   Moon,
   Sun,
-  Star
+  Star,
+  Trophy
 } from 'lucide-react';
 
 // CompletionStars component
@@ -115,7 +116,7 @@ const Avatar: React.FC<{ user: { name: string; avatar?: string } }> = ({ user })
   );
 };
 
-const Layout: React.FC<LayoutProps> = ({ children }) => {
+const Layout: React.FC = () => {
   const location = useLocation();
   const { user, logout, isAdmin } = useAuth();
   const { isDarkMode, toggleTheme } = useTheme();
@@ -153,6 +154,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Practice', href: '/practice', icon: BookOpen },
     { name: 'Items', href: '/items', icon: List },
+    { name: 'Contests', href: '/contests', icon: Trophy },
     ...(isAdmin ? [{ name: 'Add Item', href: '/add-item', icon: Plus }] : []),
     { name: 'Statistics', href: '/stats', icon: BarChart3 },
   ];
@@ -345,7 +347,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         {/* Main content */}
         <main className="flex-1 p-8 overflow-y-auto ml-64 mt-16">
           <div className="max-w-7xl mx-auto">
-            {children}
+            <Outlet />
           </div>
         </main>
       </div>

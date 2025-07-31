@@ -76,6 +76,12 @@ func (s *Server) setupRoutes() {
 		auth.POST("/oauth/login", s.authHandler.OAuthLogin)
 	}
 
+	// LeetCode proxy route (public)
+	s.router.POST("/api/v1/leetcode/proxy", func(c *gin.Context) {
+		// Convert Gin context to http.ResponseWriter and http.Request
+		handlers.LeetCodeProxyHandler(c.Writer, c.Request)
+	})
+
 	// Protected API v1 routes
 	v1 := s.router.Group("/api/v1")
 	v1.Use(middleware.AuthMiddleware(s.authHandler)) // Apply JWT middleware to all v1 routes
