@@ -1,7 +1,69 @@
 import React, { useState, useEffect } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
-import { Clock, Calendar, ExternalLink, Trophy, Timer, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Clock, Calendar, ExternalLink, Trophy, Timer, RefreshCw, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react';
 import { leetcodeApi, LeetCodeContest } from '../services/api';
+
+// Countdown timer component
+const CountdownTimer: React.FC<{ targetTimestamp: number }> = ({ targetTimestamp }) => {
+  const [timeLeft, setTimeLeft] = useState<{ days: number; hours: number; minutes: number; seconds: number }>({
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0
+  });
+  const [isLive, setIsLive] = useState(false);
+
+  useEffect(() => {
+    const calculateTimeLeft = () => {
+      const now = new Date().getTime();
+      const targetTime = targetTimestamp * 1000;
+      const difference = targetTime - now;
+      
+      if (difference <= 0) {
+        // Contest has started
+        setIsLive(true);
+        return { days: 0, hours: 0, minutes: 0, seconds: 0 };
+      }
+      
+      // Calculate time left
+      return {
+        days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+        minutes: Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60)),
+        seconds: Math.floor((difference % (1000 * 60)) / 1000)
+      };
+    };
+
+    // Initial calculation
+    setTimeLeft(calculateTimeLeft());
+    
+    // Update every second
+    const timer = setInterval(() => {
+      setTimeLeft(calculateTimeLeft());
+    }, 1000);
+    
+    return () => clearInterval(timer);
+  }, [targetTimestamp]);
+
+  if (isLive) {
+    return (
+      <div className="flex items-center text-green-500">
+        <AlertCircle className="h-4 w-4 mr-2" />
+        <span className="text-sm font-bold">LIVE NOW!</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center text-sm">
+      <span className="text-indigo-400 font-medium">
+        {timeLeft.days > 0 && `${timeLeft.days}d `}
+        {timeLeft.hours > 0 && `${timeLeft.hours}h `}
+        {timeLeft.minutes}m {timeLeft.seconds}s
+      </span>
+    </div>
+  );
+};
 
 const Contest: React.FC = () => {
   const { isDarkMode } = useTheme();
@@ -155,6 +217,12 @@ const Contest: React.FC = () => {
                       <div className={`flex items-center ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                         <Timer className="h-4 w-4 mr-2 text-indigo-400" />
                         <span className="text-sm">Duration: {formatDuration(contest.duration)}</span>
+                      </div>
+                      
+                      <div className={`flex items-center ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                        <Clock className="h-4 w-4 mr-2 text-indigo-400" />
+                        <span className="text-sm mr-1">Starts in:</span>
+                        <CountdownTimer targetTimestamp={contest.startTime} />
                       </div>
                     </div>
                     
