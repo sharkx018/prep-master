@@ -15,7 +15,7 @@ import {
 import { itemsApi, statsApi, Item, Stats } from '../services/api';
 import MotivationalQuote from '../components/MotivationalQuote';
 
-const Study: React.FC = () => {
+const Practice: React.FC = () => {
   const { isDarkMode } = useTheme();
   const [currentItem, setCurrentItem] = useState<Item | null>(null);
   const [loading, setLoading] = useState(false);
@@ -260,7 +260,7 @@ const Study: React.FC = () => {
       <MotivationalQuote />
       
       <div className="mb-8">
-        <h2 className={`text-2xl font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Study Mode</h2>
+        <h2 className={`text-2xl font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Practice Mode</h2>
         <p className={`mt-1 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
           Practice with random items from your collection
         </p>
@@ -354,7 +354,7 @@ const Study: React.FC = () => {
           isDarkMode ? 'bg-gray-800' : 'bg-white'
         }`}>
           <h3 className={`text-lg font-medium mb-4 ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
-            Ready to start studying?
+            Ready to start practicing?
           </h3>
           <p className={`mb-6 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
             Click the button below to get a random item from your pending list
@@ -480,4 +480,4 @@ const Study: React.FC = () => {
   );
 };
 
-export default Study; 
+export default Practice; 

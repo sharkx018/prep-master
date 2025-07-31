@@ -151,7 +151,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'Study', href: '/study', icon: BookOpen },
+    { name: 'Practice', href: '/practice', icon: BookOpen },
     { name: 'Items', href: '/items', icon: List },
     ...(isAdmin ? [{ name: 'Add Item', href: '/add-item', icon: Plus }] : []),
     { name: 'Statistics', href: '/stats', icon: BarChart3 },

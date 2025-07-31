@@ -378,14 +378,14 @@ const Dashboard: React.FC = () => {
       {/* Quick Actions */}
       <div className={`grid grid-cols-1 gap-6 ${isAdmin ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
         <Link
-          to="/study"
+          to="/practice"
           className="group bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl shadow-lg p-6 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 text-white"
         >
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-bold">Start Studying</h3>
+              <h3 className="text-lg font-bold">Start Practicing</h3>
               <p className="mt-1 text-sm text-indigo-100">
-                Get a random item to study
+                Get a random item to practice
               </p>
             </div>
             <div className="bg-white/20 rounded-full p-2 group-hover:bg-white/30 transition-colors">

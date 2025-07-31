@@ -6,7 +6,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Items from './pages/Items';
-import Study from './pages/Study';
+import Practice from './pages/Practice';
 import AddItem from './pages/AddItem';
 import Stats from './pages/Stats';
 
@@ -32,7 +32,7 @@ function App() {
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/items" element={<Items />} />
-                <Route path="/study" element={<Study />} />
+                <Route path="/practice" element={<Practice />} />
                 <Route path="/add-item" element={
                   <AdminRoute>
                     <AddItem />

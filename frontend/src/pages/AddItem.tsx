@@ -142,7 +142,7 @@ const AddItem: React.FC = () => {
       <div className="mb-8">
         <h2 className={`text-2xl font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Add New Item</h2>
         <p className={`mt-1 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-          Add a new problem or article to your study list
+          Add a new problem or article to your practice list
         </p>
       </div>
 
