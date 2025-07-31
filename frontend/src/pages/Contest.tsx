@@ -48,15 +48,15 @@ const CountdownTimer: React.FC<{ targetTimestamp: number }> = ({ targetTimestamp
   if (isLive) {
     return (
       <div className="flex items-center text-green-500">
-        <AlertCircle className="h-4 w-4 mr-2" />
-        <span className="text-sm font-bold">LIVE NOW!</span>
+        <AlertCircle className="h-5 w-5 mr-2" />
+        <span className="text-base font-bold">LIVE NOW!</span>
       </div>
     );
   }
 
   return (
-    <div className="flex items-center text-sm">
-      <span className="text-indigo-400 font-medium">
+    <div className="flex items-center">
+      <span className="text-base text-indigo-400 font-medium">
         {timeLeft.days > 0 && `${timeLeft.days}d `}
         {timeLeft.hours > 0 && `${timeLeft.hours}h `}
         {timeLeft.minutes}m {timeLeft.seconds}s
@@ -193,7 +193,7 @@ const Contest: React.FC = () => {
                     }`}
                   >
                     <div className="flex items-start justify-between">
-                      <h3 className={`text-lg font-bold mb-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                      <h3 className={`text-xl font-bold mb-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                         <a 
                           href={`https://leetcode.com/contest/${contest.titleSlug}`}
                           target="_blank"
@@ -203,25 +203,25 @@ const Contest: React.FC = () => {
                           {contest.title}
                         </a>
                       </h3>
-                      <div className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-xs font-bold px-2 py-1 rounded-full">
+                      <div className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-sm font-bold px-2 py-1 rounded-full">
                         UPCOMING
                       </div>
                     </div>
                     
-                    <div className="space-y-3">
+                    <div className="space-y-4 mt-4">
                       <div className={`flex items-center ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                        <Calendar className="h-4 w-4 mr-2 text-indigo-400" />
-                        <span className="text-sm">{formatTimeToIST(contest.startTime)}</span>
+                        <Calendar className="h-5 w-5 mr-2 text-indigo-400" />
+                        <span className="text-base">{formatTimeToIST(contest.startTime)}</span>
                       </div>
                       
                       <div className={`flex items-center ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                        <Timer className="h-4 w-4 mr-2 text-indigo-400" />
-                        <span className="text-sm">Duration: {formatDuration(contest.duration)}</span>
+                        <Timer className="h-5 w-5 mr-2 text-indigo-400" />
+                        <span className="text-base">Duration: {formatDuration(contest.duration)}</span>
                       </div>
                       
                       <div className={`flex items-center ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                        <Clock className="h-4 w-4 mr-2 text-indigo-400" />
-                        <span className="text-sm mr-1">Starts in:</span>
+                        <Clock className="h-5 w-5 mr-2 text-indigo-400" />
+                        <span className="text-base mr-1">Starts in:</span>
                         <CountdownTimer targetTimestamp={contest.startTime} />
                       </div>
                     </div>
