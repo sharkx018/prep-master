@@ -498,35 +498,79 @@ func (r *ItemRepository) GetInProgressItemWithUserProgress(userID int) (*models.
 
 // GetRandomPendingWithUserProgress retrieves a random pending item for a user
 func (r *ItemRepository) GetRandomPendingWithUserProgress(userID int) (*models.ItemWithProgress, error) {
-	query := `
-		SELECT 
-			i.id, i.title, i.link, i.category, i.subcategory, i.attachments, i.created_at,
-			COALESCE(up.status, 'pending') as status,
-			COALESCE(up.starred, false) as starred,
-			COALESCE(up.notes, '') as notes,
-			up.completed_at
+	// Get distinct categories that have pending items
+	categoriesQuery := `
+		SELECT DISTINCT i.category
 		FROM items i
 		LEFT JOIN user_progress up 
 			ON i.id = up.item_id AND up.user_id = $1
 		WHERE COALESCE(up.status, 'pending') = 'pending'
-		ORDER BY RANDOM() 
-		LIMIT 1`
+		ORDER BY i.category`
 
-	var item models.ItemWithProgress
-	err := r.db.QueryRow(query, userID).Scan(
-		&item.ID, &item.Title, &item.Link, &item.Category, &item.Subcategory,
-		&item.Attachments, &item.CreatedAt, &item.Status, &item.Starred,
-		&item.Notes, &item.CompletedAt,
-	)
+	rows, err := r.db.Query(categoriesQuery, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get categories with pending items: %w", err)
+	}
+	defer rows.Close()
 
-	if err == sql.ErrNoRows {
+	var categories []models.Category
+	for rows.Next() {
+		var category models.Category
+		if err := rows.Scan(&category); err != nil {
+			return nil, fmt.Errorf("failed to scan category: %w", err)
+		}
+		categories = append(categories, category)
+	}
+
+	if len(categories) == 0 {
 		return nil, fmt.Errorf("no pending items found")
 	}
-	if err != nil {
-		return nil, fmt.Errorf("failed to get random pending item with user progress: %w", err)
+
+	// Try each category randomly until we find a pending item
+	// We'll shuffle the categories to randomize the order
+	for i := len(categories) - 1; i > 0; i-- {
+		j := int(time.Now().UnixNano()) % (i + 1)
+		categories[i], categories[j] = categories[j], categories[i]
 	}
 
-	return &item, nil
+	// Try each category in the shuffled order
+	for _, category := range categories {
+		// Get a random pending item from this category
+		itemQuery := `
+			SELECT 
+				i.id, i.title, i.link, i.category, i.subcategory, i.attachments, i.created_at,
+				COALESCE(up.status, 'pending') as status,
+				COALESCE(up.starred, false) as starred,
+				COALESCE(up.notes, '') as notes,
+				up.completed_at
+			FROM items i
+			LEFT JOIN user_progress up 
+				ON i.id = up.item_id AND up.user_id = $1
+			WHERE i.category = $2 AND COALESCE(up.status, 'pending') = 'pending'
+			ORDER BY RANDOM() 
+			LIMIT 1`
+
+		var item models.ItemWithProgress
+		err := r.db.QueryRow(itemQuery, userID, category).Scan(
+			&item.ID, &item.Title, &item.Link, &item.Category, &item.Subcategory,
+			&item.Attachments, &item.CreatedAt, &item.Status, &item.Starred,
+			&item.Notes, &item.CompletedAt,
+		)
+
+		if err == sql.ErrNoRows {
+			// No pending items in this category, continue to next category
+			continue
+		}
+		if err != nil {
+			return nil, fmt.Errorf("failed to get random pending item from category %s: %w", category, err)
+		}
+
+		// Found a pending item, return it
+		return &item, nil
+	}
+
+	// If we get here, no pending items were found in any category
+	return nil, fmt.Errorf("no pending items found in any category")
 }
 
 // CreateUserProgressForItem creates or updates a user progress record for an item
@@ -625,10 +669,11 @@ func (r *ItemRepository) CountPendingForUser(userID int) (int, error) {
 		FROM items i
 		LEFT JOIN user_progress up 
 			ON i.id = up.item_id AND up.user_id = $1
-		WHERE COALESCE(up.status, 'pending') = 'pending'`
+		WHERE COALESCE(up.status, 'pending') = 'pending'
+		AND i.category != $2`
 
 	var count int
-	err := r.db.QueryRow(query, userID).Scan(&count)
+	err := r.db.QueryRow(query, userID, models.CategoryMiscellaneous).Scan(&count)
 	if err != nil {
 		return 0, fmt.Errorf("failed to count pending items for user: %w", err)
 	}
@@ -762,7 +807,28 @@ func (r *ItemRepository) ResetAllUserProgress(userID int) (int64, error) {
 	return rowsAffected, nil
 }
 
-// GetCountsForUser returns item counts by status for a specific user
+// ResetUserProgressByCategory resets all user progress for a specific category back to pending
+func (r *ItemRepository) ResetUserProgressByCategory(userID int, category models.Category) (int64, error) {
+	query := `
+		UPDATE user_progress 
+		SET status = 'pending', completed_at = NULL, updated_at = $1
+		WHERE user_id = $2 AND status IN ('done', 'in-progress')
+		AND item_id IN (SELECT id FROM items WHERE category = $3)`
+
+	result, err := r.db.Exec(query, time.Now(), userID, category)
+	if err != nil {
+		return 0, fmt.Errorf("failed to reset user progress for category %s: %w", category, err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return 0, fmt.Errorf("failed to get rows affected: %w", err)
+	}
+
+	return rowsAffected, nil
+}
+
+// GetCountsForUser returns item counts by status for a specific user (excluding miscellaneous category)
 func (r *ItemRepository) GetCountsForUser(userID int) (total, completed, pending, inProgress int, err error) {
 	query := `
 		SELECT 
@@ -772,9 +838,10 @@ func (r *ItemRepository) GetCountsForUser(userID int) (total, completed, pending
 			COUNT(CASE WHEN COALESCE(up.status, 'pending') = 'in-progress' THEN 1 END) as in_progress
 		FROM items i
 		LEFT JOIN user_progress up 
-			ON i.id = up.item_id AND up.user_id = $1`
+			ON i.id = up.item_id AND up.user_id = $1
+		WHERE i.category != $2`
 
-	err = r.db.QueryRow(query, userID).Scan(&total, &completed, &pending, &inProgress)
+	err = r.db.QueryRow(query, userID, models.CategoryMiscellaneous).Scan(&total, &completed, &pending, &inProgress)
 	if err != nil {
 		return 0, 0, 0, 0, fmt.Errorf("failed to get user counts: %w", err)
 	}
@@ -782,8 +849,10 @@ func (r *ItemRepository) GetCountsForUser(userID int) (total, completed, pending
 	return total, completed, pending, inProgress, nil
 }
 
-// GetCountsByCategoryForUser returns item counts by category and status for a specific user
-func (r *ItemRepository) GetCountsByCategoryForUser(userID int) (map[models.Category]map[models.Status]int, error) {
+// GetCountsByCategoryForUser returns item counts by category and status for a specific user (excluding miscellaneous category)
+func (r *ItemRepository) GetCountsByCategoryForUser(userID int, removeMiscellaneous bool) (map[models.Category]map[models.Status]int, error) {
+	
+	
 	query := `
 		SELECT 
 			i.category,
@@ -792,14 +861,31 @@ func (r *ItemRepository) GetCountsByCategoryForUser(userID int) (map[models.Cate
 		FROM items i
 		LEFT JOIN user_progress up 
 			ON i.id = up.item_id AND up.user_id = $1
+		WHERE 1=1
+		`
+
+	if removeMiscellaneous {
+		query += ` AND i.category != $2`
+	}
+
+	query += `
 		GROUP BY i.category, COALESCE(up.status, 'pending')
 		ORDER BY i.category, status`
 
-	rows, err := r.db.Query(query, userID)
+	var rows *sql.Rows
+	var err error
+	if removeMiscellaneous {
+		rows, err = r.db.Query(query, userID, models.CategoryMiscellaneous)
+	} else {
+		rows, err = r.db.Query(query, userID)
+	}
+	
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user category counts: %w", err)
 	}
 	defer rows.Close()
+
+	
 
 	result := make(map[models.Category]map[models.Status]int)
 
@@ -813,6 +899,7 @@ func (r *ItemRepository) GetCountsByCategoryForUser(userID int) (map[models.Cate
 			return nil, fmt.Errorf("failed to scan category count: %w", err)
 		}
 
+
 		if result[category] == nil {
 			result[category] = make(map[models.Status]int)
 		}
@@ -822,7 +909,7 @@ func (r *ItemRepository) GetCountsByCategoryForUser(userID int) (map[models.Cate
 	return result, nil
 }
 
-// GetCountsBySubcategoryForUser returns item counts by subcategory and status for a specific user
+// GetCountsBySubcategoryForUser returns item counts by subcategory and status for a specific user (excluding miscellaneous category)
 func (r *ItemRepository) GetCountsBySubcategoryForUser(userID int) (map[models.Category]map[string]map[models.Status]int, error) {
 	query := `
 		SELECT 
@@ -833,10 +920,11 @@ func (r *ItemRepository) GetCountsBySubcategoryForUser(userID int) (map[models.C
 		FROM items i
 		LEFT JOIN user_progress up 
 			ON i.id = up.item_id AND up.user_id = $1
+		WHERE i.category != $2
 		GROUP BY i.category, i.subcategory, COALESCE(up.status, 'pending')
 		ORDER BY i.category, i.subcategory, status`
 
-	rows, err := r.db.Query(query, userID)
+	rows, err := r.db.Query(query, userID, models.CategoryMiscellaneous)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user subcategory counts: %w", err)
 	}

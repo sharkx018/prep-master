@@ -11,9 +11,10 @@ import (
 type Category string
 
 const (
-	CategoryDSA Category = "dsa"
-	CategoryLLD Category = "lld"
-	CategoryHLD Category = "hld"
+	CategoryDSA           Category = "dsa"
+	CategoryLLD           Category = "lld"
+	CategoryHLD           Category = "hld"
+	CategoryMiscellaneous Category = "miscellaneous"
 )
 
 // Status represents the completion status of an item
@@ -123,7 +124,7 @@ type PaginationMeta struct {
 
 // ValidCategories returns a slice of all valid categories
 func ValidCategories() []Category {
-	return []Category{CategoryDSA, CategoryLLD, CategoryHLD}
+	return []Category{CategoryDSA, CategoryLLD, CategoryHLD, CategoryMiscellaneous}
 }
 
 // IsValidCategory checks if a category is valid
@@ -245,5 +246,13 @@ var CommonSubcategories = map[Category][]string{
 		"security",
 		"interview tips",
 		"interview questions",
+	},
+	CategoryMiscellaneous: {
+		"gre",
+		"finance",
+		"development",
+		"sql",
+		"books",
+		"other",
 	},
 }

@@ -70,7 +70,7 @@ func (s *StatsService) GetDetailedStatsForUser(userID int) (*models.DetailedStat
 	}
 
 	// Get user-specific category counts
-	categoryCounts, err := s.itemRepo.GetCountsByCategoryForUser(userID)
+	categoryCounts, err := s.itemRepo.GetCountsByCategoryForUser(userID, true)
 	if err != nil {
 		return nil, err
 	}
@@ -146,7 +146,7 @@ func (s *StatsService) GetCategoryStatsForUser(userID int, category models.Categ
 	}
 
 	// Get user-specific category counts
-	categoryCounts, err := s.itemRepo.GetCountsByCategoryForUser(userID)
+	categoryCounts, err := s.itemRepo.GetCountsByCategoryForUser(userID, true)
 	if err != nil {
 		return nil, err
 	}

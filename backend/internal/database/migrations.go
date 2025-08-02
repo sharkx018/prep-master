@@ -24,6 +24,7 @@ func RunMigrations(db *sql.DB) error {
 		addUserRoleColumn,
 		addUserProgressStarredColumn,
 		addUserStatsCompletedAllCountColumn,
+		addMiscellaneousCategory,
 	}
 
 	for i, migration := range migrations {
@@ -223,5 +224,17 @@ BEGIN
                    WHERE table_name='user_stats' AND column_name='completed_all_count') THEN
         ALTER TABLE user_stats ADD COLUMN completed_all_count INTEGER NOT NULL DEFAULT 0;
     END IF;
+END $$;
+`
+
+const addMiscellaneousCategory = `
+DO $$ 
+BEGIN 
+    -- Drop the existing check constraint if it exists
+    ALTER TABLE items DROP CONSTRAINT IF EXISTS items_category_check;
+    
+    -- Add the new check constraint that includes 'miscellaneous'
+    ALTER TABLE items ADD CONSTRAINT items_category_check 
+        CHECK (category IN ('dsa', 'lld', 'hld', 'miscellaneous'));
 END $$;
 `

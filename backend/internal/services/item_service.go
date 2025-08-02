@@ -360,6 +360,8 @@ func (s *ItemService) CompleteItemWithUserProgress(userID, itemID int) (*models.
 		return nil, err
 	}
 
+	fmt.Println("itemID---------", itemID)
+
 	// Update user's daily streak
 	if err := s.statsRepo.UpdateUserStreakOnActivity(userID); err != nil {
 		// Log error but don't fail the completion
@@ -379,6 +381,35 @@ func (s *ItemService) CompleteItemWithUserProgress(userID, itemID int) (*models.
 		if err := s.statsRepo.IncrementUserCompletedAllCount(userID); err != nil {
 			// Log error but don't fail the completion
 			fmt.Printf("Warning: failed to increment user completed_all_count for user %d: %v\n", userID, err)
+		}
+	}
+
+	// Check if all miscellaneous items are completed for this user
+	// If yes, reset all miscellaneous items back to pending
+	categoryCounts, err := s.itemRepo.GetCountsByCategoryForUser(userID, false)
+
+	
+	fmt.Println("categoryCounts---------", categoryCounts)
+	if err != nil {
+		// Log error but don't fail the completion
+		fmt.Printf("Warning: failed to get category counts for user %d: %v\n", userID, err)
+	} else {
+		if miscCounts, exists := categoryCounts[models.CategoryMiscellaneous]; exists {
+			completedCount := miscCounts[models.StatusDone]
+			pendingCount := miscCounts[models.StatusPending]
+			inProgressCount := miscCounts[models.StatusInProgress]
+
+			// If all miscellaneous items are completed (no pending or in-progress items)
+			if completedCount > 0 && pendingCount == 0 && inProgressCount == 0 {
+				// Reset all miscellaneous items back to pending
+				rowsAffected, resetErr := s.ResetItemsByCategoryWithUserProgress(userID, models.CategoryMiscellaneous)
+				if resetErr != nil {
+					// Log error but don't fail the completion
+					fmt.Printf("Warning: failed to reset miscellaneous items for user %d: %v\n", userID, resetErr)
+				} else {
+					fmt.Printf("Info: reset %d miscellaneous items for user %d as all were completed\n", rowsAffected, userID)
+				}
+			}
 		}
 	}
 
@@ -436,6 +467,19 @@ func (s *ItemService) ResetAllItemsWithUserProgress(userID int) (int64, error) {
 	}
 
 	return s.itemRepo.ResetAllUserProgress(userID)
+}
+
+// ResetItemsByCategoryWithUserProgress resets all user progress for a specific category back to pending
+func (s *ItemService) ResetItemsByCategoryWithUserProgress(userID int, category models.Category) (int64, error) {
+	if userID <= 0 {
+		return 0, fmt.Errorf("invalid user ID")
+	}
+
+	if !models.IsValidCategory(category) {
+		return 0, fmt.Errorf("invalid category: %s", category)
+	}
+
+	return s.itemRepo.ResetUserProgressByCategory(userID, category)
 }
 
 // GetItemCounts returns basic item statistics
