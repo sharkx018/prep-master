@@ -455,6 +455,7 @@ const Items: React.FC = () => {
               <option value="dsa">Data Structures & Algorithms</option>
               <option value="lld">Low Level Design</option>
               <option value="hld">High Level Design</option>
+              <option value="miscellaneous">Miscellaneous</option>
             </select>
           </div>
           
@@ -568,6 +569,7 @@ const Items: React.FC = () => {
                           <option value="dsa">Data Structures & Algorithms</option>
                           <option value="lld">Low Level Design</option>
                           <option value="hld">High Level Design</option>
+                          <option value="miscellaneous">Miscellaneous</option>
                         </select>
                       </div>
                       <div>
