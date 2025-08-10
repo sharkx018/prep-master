@@ -3,6 +3,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { 
   ExternalLink, 
   CheckCircle, 
+  CheckCircle2,
   RefreshCw, 
   Loader2,
   AlertCircle,
@@ -10,7 +11,8 @@ import {
   Link,
   Hash,
   Info,
-  Flame
+  Flame,
+  Clock
 } from 'lucide-react';
 import { itemsApi, statsApi, Item, Stats } from '../services/api';
 import MotivationalQuote from '../components/MotivationalQuote';
@@ -23,6 +25,8 @@ const Practice: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [noItems, setNoItems] = useState(false);
   const [stats, setStats] = useState<Stats | null>(null);
+  const [completedItems, setCompletedItems] = useState<Item[]>([]);
+  const [loadingCompletedItems, setLoadingCompletedItems] = useState(false);
 
   const fetchStats = async () => {
     try {
@@ -33,9 +37,28 @@ const Practice: React.FC = () => {
     }
   };
 
+  const fetchCompletedItems = async () => {
+    try {
+      setLoadingCompletedItems(true);
+      // Removed the limit to get all completed items
+      const items = await itemsApi.getItems({ status: 'done' });
+      // Sort by completed_at in descending order
+      const sortedItems = items.sort((a, b) => {
+        if (!a.completed_at || !b.completed_at) return 0;
+        return new Date(b.completed_at).getTime() - new Date(a.completed_at).getTime();
+      });
+      setCompletedItems(sortedItems);
+    } catch (err) {
+      console.error('Failed to fetch completed items:', err);
+    } finally {
+      setLoadingCompletedItems(false);
+    }
+  };
+
   useEffect(() => {
     fetchStats();
     fetchNextItem();
+    fetchCompletedItems();
   }, []);
 
   const fetchNextItem = async () => {
@@ -69,6 +92,9 @@ const Practice: React.FC = () => {
       
       // Dispatch custom event for widget to refresh
       window.dispatchEvent(new CustomEvent('itemCompleted'));
+      
+      // Fetch completed items again to update the list
+      fetchCompletedItems();
       
       // Fetch next item after marking complete
       await fetchNextItem();
@@ -392,8 +418,9 @@ const Practice: React.FC = () => {
         </div>
       )}
 
+      {/* Current Item Section */}
       {currentItem && !loading && (
-        <div className={`rounded-lg shadow-lg overflow-hidden ${
+        <div className={`rounded-lg shadow-lg overflow-hidden mb-8 ${
           isDarkMode ? 'bg-gray-800' : 'bg-white'
         }`}>
           <div className="p-6">
@@ -476,6 +503,114 @@ const Practice: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Completed Items Section */}
+      <div className="mt-12">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+              All Completed Items
+            </h3>
+            {!loadingCompletedItems && completedItems.length > 0 && (
+              <p className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                Showing {completedItems.length} {completedItems.length === 1 ? 'item' : 'items'} completed
+              </p>
+            )}
+          </div>
+          <button 
+            onClick={fetchCompletedItems}
+            className={`inline-flex items-center text-xs px-2 py-1 rounded ${
+              isDarkMode 
+                ? 'text-indigo-400 hover:text-indigo-300' 
+                : 'text-indigo-600 hover:text-indigo-700'
+            }`}
+          >
+            <RefreshCw className="h-3 w-3 mr-1" />
+            Refresh
+          </button>
+        </div>
+
+        {loadingCompletedItems ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-6 w-6 animate-spin text-indigo-600" />
+          </div>
+        ) : completedItems.length === 0 ? (
+          <div className={`rounded-lg border p-6 text-center ${
+            isDarkMode 
+              ? 'bg-gray-800/50 border-gray-700 text-gray-400' 
+              : 'bg-gray-50 border-gray-200 text-gray-600'
+          }`}>
+            No completed items yet. Start practicing to build your list!
+          </div>
+        ) : (
+          <div className={`shadow overflow-hidden rounded-lg ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+            <ul className={`divide-y ${isDarkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
+              {completedItems.map((item) => (
+                <li key={item.id} className={`px-6 py-4 ${
+                  isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'
+                }`}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-3 mb-2">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getCategoryColor(item.category)}`}>
+                          {item.category.toUpperCase()}
+                        </span>
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {item.subcategory}
+                        </span>
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          Done
+                        </span>
+                        {item.starred && (
+                          <Star className="h-4 w-4 text-yellow-500 fill-current" />
+                        )}
+                      </div>
+                      <a
+                        href={item.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`text-sm font-medium hover:underline ${isDarkMode ? 'text-gray-100 hover:text-indigo-400' : 'text-gray-900 hover:text-indigo-600'}`}
+                      >
+                        {item.title}
+                      </a>
+                      <p className={`text-sm mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                        {item.completed_at && `Completed on ${new Date(item.completed_at).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}`}
+                      </p>
+                      {renderAttachments(item.attachments)}
+                    </div>
+                    <div className="flex items-center space-x-2 ml-4">
+                      <a
+                        href={item.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-2 text-gray-400 hover:text-gray-600"
+                        title="Open link"
+                      >
+                        <ExternalLink className="h-5 w-5" />
+                      </a>
+                      <button
+                        className="p-2 transition-colors text-green-600"
+                        disabled
+                        title="Already completed"
+                      >
+                        <CheckCircle2 className="h-5 w-5" />
+                      </button>
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
