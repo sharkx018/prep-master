@@ -19,6 +19,7 @@ type Server struct {
 	userProgressRepo *repositories.UserProgressRepository
 }
 
+
 // New creates a new server instance
 func New(cfg *config.Config, itemHandler *handlers.ItemHandler, statsHandler *handlers.StatsHandler, authHandler *handlers.AuthHandler, userProgressRepo *repositories.UserProgressRepository) *Server {
 	// Set Gin mode based on environment
