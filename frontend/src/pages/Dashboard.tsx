@@ -143,30 +143,6 @@ const Dashboard: React.FC = () => {
     <div>
       
       
-      <div className="mb-8">
-        <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl p-8 text-white shadow-xl relative overflow-hidden">
-          <div className="absolute top-0 right-0 -mt-4 -mr-4 opacity-20">
-            <Trophy className="h-32 w-32" />
-          </div>
-          <div className="relative z-10">
-            <div className="flex items-center mb-4">
-              <Target className="h-8 w-8 mr-3" />
-              <h2 className="text-3xl font-bold">PrepMaster Dashboard</h2>
-            </div>
-            <p className="text-indigo-100 text-lg mb-2">
-              Welcome back, {user?.name || 'User'}!
-            </p>
-            <div className="flex items-center space-x-2">
-              {/* <Sparkles className="h-5 w-5 text-yellow-300" /> */}
-              <span className="text-sm font-medium text-indigo-200">
-                {stats?.completed_all_count > 0 
-                  ? `Amazing! You've completed ${stats.completed_all_count} full cycles!` 
-                  : ''}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* Motivational Quote */}
       <MotivationalQuote />

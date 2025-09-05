@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
 import { Clock, Calendar, ExternalLink, Trophy, Timer, RefreshCw, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react';
 import { leetcodeApi, LeetCodeContest } from '../services/api';
+import MotivationalQuote from '../components/MotivationalQuote';
 
 // Countdown timer component
 const CountdownTimer: React.FC<{ targetTimestamp: number }> = ({ targetTimestamp }) => {
@@ -146,7 +147,10 @@ const Contest: React.FC = () => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
+    <div>
+      {/* Motivational Quote */}
+      <MotivationalQuote />
+
       <div className="mb-8">
         <h1 className={`text-3xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
           <span className="bg-gradient-to-r from-indigo-500 to-purple-600 bg-clip-text text-transparent">
