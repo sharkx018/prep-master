@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
-import { Flame, Trophy, RefreshCw } from 'lucide-react';
+import { Flame, Trophy, RefreshCw, Star } from 'lucide-react';
 import { statsApi, Stats } from '../services/api';
 
 const HeaderStreakWidget: React.FC = () => {
@@ -75,8 +75,24 @@ const HeaderStreakWidget: React.FC = () => {
     return 'from-gray-500 to-gray-600';
   };
 
+  const getRankInfo = (count: number) => {
+    if (count === 0) return { title: 'Newbie', color: 'text-gray-400', bgColor: 'from-gray-900/50 to-gray-800/40', borderColor: 'border-gray-600/50' };
+    if (count === 1) return { title: 'Pupil', color: 'text-green-400', bgColor: 'from-green-900/50 to-green-800/40', borderColor: 'border-green-600/50' };
+    if (count === 2) return { title: 'Specialist', color: 'text-cyan-400', bgColor: 'from-cyan-900/50 to-cyan-800/40', borderColor: 'border-cyan-600/50' };
+    if (count === 3) return { title: 'Expert', color: 'text-blue-400', bgColor: 'from-blue-900/50 to-blue-800/40', borderColor: 'border-blue-600/50' };
+    if (count === 4) return { title: 'Candidate Master', color: 'text-violet-400', bgColor: 'from-violet-900/50 to-violet-800/40', borderColor: 'border-violet-600/50' };
+    if (count === 5) return { title: 'Master', color: 'text-orange-400', bgColor: 'from-orange-900/50 to-orange-800/40', borderColor: 'border-orange-600/50' };
+    if (count === 6) return { title: 'International Master', color: 'text-orange-400', bgColor: 'from-orange-900/50 to-orange-800/40', borderColor: 'border-orange-600/50' };
+    if (count === 7) return { title: 'Grandmaster', color: 'text-red-400', bgColor: 'from-red-900/50 to-red-800/40', borderColor: 'border-red-600/50' };
+    if (count >= 10 && count < 15) return { title: 'International Grandmaster', color: 'text-red-400', bgColor: 'from-red-900/50 to-red-800/40', borderColor: 'border-red-600/50' };
+    if (count >= 15) return { title: 'Legendary Grandmaster', color: 'text-red-400', bgColor: 'from-red-900/50 to-red-800/40', borderColor: 'border-red-600/50', isLegendary: true };
+    return { title: 'Grandmaster', color: 'text-red-400', bgColor: 'from-red-900/50 to-red-800/40', borderColor: 'border-red-600/50' };
+  };
+
+  const rankInfo = getRankInfo(stats.completed_all_count || 0);
+  
   return (
-    <div className="flex items-center space-x-5">
+    <div className="flex items-center space-x-4">
       {/* Bold Streak Section */}
       <div className={`group flex items-center space-x-3 px-4 py-2 rounded-xl transition-all duration-200 hover:scale-105 shadow-lg ${
         isDarkMode 
@@ -181,6 +197,41 @@ const HeaderStreakWidget: React.FC = () => {
                 completionPercentage >= 75 ? getProgressColor() : 'bg-gray-400'
               }`}></div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Completion Cycles Section */}
+      <div className={`group flex items-center space-x-3 px-3 py-2 rounded-xl transition-all duration-200 hover:scale-105 shadow-lg min-w-fit ${
+        isDarkMode 
+          ? `bg-gradient-to-r ${rankInfo.bgColor} border-2 ${rankInfo.borderColor} hover:border-opacity-70 shadow-gray-900/30` 
+          : 'bg-gradient-to-r from-indigo-100 to-purple-100 border-2 border-indigo-300 hover:border-indigo-400 shadow-indigo-200/40'
+      }`}>
+        <div className="relative">
+          <Star className={`h-5 w-5 transition-all duration-200 drop-shadow-sm ${rankInfo.color}`} />
+          {stats.completed_all_count > 0 && (
+            <div className="absolute -top-1.5 -right-1.5 bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center font-bold text-[9px] shadow-lg">
+              {stats.completed_all_count > 9 ? '9+' : stats.completed_all_count}
+            </div>
+          )}
+        </div>
+        
+        <div className="flex flex-col min-w-0">
+          <div className="flex items-center space-x-1.5">
+            <span className={`text-xs font-bold ${rankInfo.color} whitespace-nowrap`}>
+              {rankInfo.title}
+            </span>
+          </div>
+          
+          <div className="flex items-center space-x-1">
+            <span className={`text-[10px] font-medium ${
+              isDarkMode ? 'text-gray-400' : 'text-gray-600'
+            }`}>
+              cycles:
+            </span>
+            <span className={`text-[10px] font-bold ${rankInfo.color}`}>
+              {stats.completed_all_count}
+            </span>
           </div>
         </div>
       </div>

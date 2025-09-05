@@ -248,11 +248,12 @@ const Layout: React.FC = () => {
                           if (count >= 7) return 'text-red-400';
                           return 'text-white';
                         })();
-                        return <span className={colorClass}>{user.name}</span>;
+                        // return <span className={colorClass}>{user.name}</span>;
+                        return <span>{user.name}</span>;
                       })()}
                     </span>
                   </div>
-                  <CompletionStars completionCycles={stats?.completed_all_count || 0} />
+                  {/* <CompletionStars completionCycles={stats?.completed_all_count || 0} /> */}
                   <button
                     onClick={handleLogout}
                     className="p-2 text-white/80 hover:text-white hover:bg-white/20 rounded-full transition-colors"
