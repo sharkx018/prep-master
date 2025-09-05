@@ -3,6 +3,7 @@ import { Link, useLocation, Outlet } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import HeaderStreakWidget from './HeaderStreakWidget';
+import FloatingContestWidget from './FloatingContestWidget';
 import { statsApi, Stats } from '../services/api';
 import { 
   LayoutDashboard, 
@@ -121,6 +122,11 @@ const Layout: React.FC = () => {
   const { user, logout, isAdmin } = useAuth();
   const { isDarkMode, toggleTheme } = useTheme();
   const [stats, setStats] = useState<Stats | null>(null);
+  const [showContestWidget, setShowContestWidget] = useState(() => {
+    // Check if user has previously dismissed the widget
+    const dismissed = localStorage.getItem('contestWidgetDismissed');
+    return dismissed !== 'true';
+  });
 
   const fetchStats = useCallback(async () => {
     try {
@@ -163,6 +169,12 @@ const Layout: React.FC = () => {
 
   const handleLogout = () => {
     logout();
+  };
+
+  const handleToggleContestWidget = () => {
+    const newState = !showContestWidget;
+    setShowContestWidget(newState);
+    localStorage.setItem('contestWidgetDismissed', newState ? 'false' : 'true');
   };
 
   return (
@@ -209,6 +221,15 @@ const Layout: React.FC = () => {
               >
                 <Linkedin className="h-5 w-5" />
               </a>
+              <button
+                onClick={handleToggleContestWidget}
+                className={`p-2 text-white/80 hover:text-white hover:bg-white/20 rounded-full transition-all duration-300 hover:scale-110 ${
+                  showContestWidget ? 'bg-white/20' : ''
+                }`}
+                title={showContestWidget ? "Hide Contest Widget" : "Show Contest Widget"}
+              >
+                <Trophy className="h-5 w-5" />
+              </button>
               <button
                 onClick={toggleTheme}
                 className="p-2 text-white/80 hover:text-white hover:bg-white/20 rounded-full transition-all duration-300 hover:scale-110"
@@ -352,6 +373,11 @@ const Layout: React.FC = () => {
           </div>
         </main>
       </div>
+
+      {/* Floating Contest Widget */}
+      {showContestWidget && (
+        <FloatingContestWidget />
+      )}
     </div>
   );
 };
