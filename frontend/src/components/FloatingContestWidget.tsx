@@ -132,6 +132,7 @@ const FloatingContestWidget: React.FC<FloatingContestWidgetProps> = () => {
 
   const upcomingContests = contests
     .filter(contest => isUpcoming(contest.startTime))
+    .sort((a, b) => a.startTime - b.startTime) // Sort by start time (ascending - earliest first)
     .slice(0, 3); // Show only next 3 contests
   
   // Debug log

@@ -120,8 +120,13 @@ const Contest: React.FC = () => {
     return startTime * 1000 > Date.now();
   };
 
-  const upcomingContests = contests.filter(contest => isUpcoming(contest.startTime));
-  const allPastContests = contests.filter(contest => !isUpcoming(contest.startTime));
+  const upcomingContests = contests
+    .filter(contest => isUpcoming(contest.startTime))
+    .sort((a, b) => a.startTime - b.startTime); // Sort upcoming contests by start time (ascending - earliest first)
+  
+  const allPastContests = contests
+    .filter(contest => !isUpcoming(contest.startTime))
+    .sort((a, b) => b.startTime - a.startTime); // Sort past contests by start time (descending - most recent first)
   
   // Calculate pagination
   const totalPages = Math.ceil(allPastContests.length / pastContestsPerPage);
