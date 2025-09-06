@@ -125,7 +125,7 @@ const EngBlogs: React.FC = () => {
         </div>
 
         {/* Stats Bar */}
-        <div className={`grid grid-cols-1 md:grid-cols-3 gap-4 p-4 rounded-xl ${
+        <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 p-4 rounded-xl ${
           isDarkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'
         } shadow-sm mb-6`}>
           <div className="flex items-center space-x-3">
@@ -147,17 +147,6 @@ const EngBlogs: React.FC = () => {
               </p>
               <p className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                 {engBlogs.reduce((sum, blog) => sum + blog.practice_problems.length, 0)}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center space-x-3">
-            <Star className="h-5 w-5 text-yellow-500" />
-            <div>
-              <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                Curated Content
-              </p>
-              <p className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                Premium
               </p>
             </div>
           </div>

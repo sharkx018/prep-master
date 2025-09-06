@@ -48,3 +48,4 @@ docker-compose.override.yml
 
 # Database backups
 backups/ 
+db-backup
