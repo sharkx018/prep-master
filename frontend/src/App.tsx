@@ -10,6 +10,7 @@ import Practice from './pages/Practice';
 import AddItem from './pages/AddItem';
 import Stats from './pages/Stats';
 import Contest from './pages/Contest';
+import EngBlogs from './pages/EngBlogs';
 import Login from './pages/Login';
 
 // Component to protect admin-only routes
@@ -36,6 +37,7 @@ function App() {
               <Route path="items" element={<Items />} />
               <Route path="practice" element={<Practice />} />
               <Route path="contests" element={<Contest />} />
+              <Route path="eng-blogs" element={<EngBlogs />} />
               <Route path="add-item" element={
                 <AdminRoute>
                   <AddItem />

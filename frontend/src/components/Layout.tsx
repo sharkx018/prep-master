@@ -20,7 +20,8 @@ import {
   Moon,
   Sun,
   Star,
-  Trophy
+  Trophy,
+  Building2
 } from 'lucide-react';
 
 // CompletionStars component
@@ -161,6 +162,7 @@ const Layout: React.FC = () => {
     { name: 'Practice', href: '/practice', icon: BookOpen },
     { name: 'Items', href: '/items', icon: List },
     { name: 'Contests', href: '/contests', icon: Trophy },
+    { name: 'Eng Blogs', href: '/eng-blogs', icon: Building2 },
     ...(isAdmin ? [{ name: 'Add Item', href: '/add-item', icon: Plus }] : []),
     { name: 'Statistics', href: '/stats', icon: BarChart3 },
   ];

@@ -25,6 +25,7 @@ func RunMigrations(db *sql.DB) error {
 		addUserProgressStarredColumn,
 		addUserStatsCompletedAllCountColumn,
 		addMiscellaneousCategory,
+		createEngBlogsTable,
 	}
 
 	for i, migration := range migrations {
@@ -237,4 +238,30 @@ BEGIN
     ALTER TABLE items ADD CONSTRAINT items_category_check 
         CHECK (category IN ('dsa', 'lld', 'hld', 'miscellaneous'));
 END $$;
+`
+
+const createEngBlogsTable = `
+CREATE TABLE IF NOT EXISTS eng_blogs (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    link TEXT NOT NULL,
+    order_idx INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS eng_blog_articles (
+    id SERIAL PRIMARY KEY,
+    blog_id INTEGER NOT NULL REFERENCES eng_blogs(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    order_idx INTEGER NOT NULL DEFAULT 0,
+    external_link TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_eng_blogs_order ON eng_blogs(order_idx);
+CREATE INDEX IF NOT EXISTS idx_eng_blog_articles_blog_id ON eng_blog_articles(blog_id);
+CREATE INDEX IF NOT EXISTS idx_eng_blog_articles_order ON eng_blog_articles(order_idx);
+CREATE INDEX IF NOT EXISTS idx_eng_blog_articles_blog_order ON eng_blog_articles(blog_id, order_idx);
 `

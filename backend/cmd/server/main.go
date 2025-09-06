@@ -39,6 +39,7 @@ func main() {
 	statsRepo := repositories.NewStatsRepository(db)
 	userRepo := repositories.NewUserRepository(db)
 	userProgressRepo := repositories.NewUserProgressRepository(db)
+	engBlogRepo := repositories.NewEngBlogRepository(db)
 
 	// Initialize services
 	itemService := services.NewItemService(itemRepo, statsRepo)
@@ -49,9 +50,10 @@ func main() {
 	itemHandler := handlers.NewItemHandler(itemService, userService)
 	statsHandler := handlers.NewStatsHandler(statsService)
 	authHandler := handlers.NewAuthHandler(cfg, userService)
+	engBlogHandler := handlers.NewEngBlogHandler(engBlogRepo)
 
 	// Initialize and start server
-	srv := server.New(cfg, itemHandler, statsHandler, authHandler, userProgressRepo)
+	srv := server.New(cfg, itemHandler, statsHandler, authHandler, engBlogHandler, userProgressRepo)
 
 	log.Printf("Server starting on port %s", cfg.Port)
 	log.Printf("Server configuration: %+v", cfg)

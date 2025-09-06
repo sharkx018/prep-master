@@ -129,6 +129,26 @@ export interface LeetCodeContestsResponse {
   };
 }
 
+export interface EngBlogProblem {
+  id: string;
+  title: string;
+  order_idx: number;
+  external_link: string;
+}
+
+export interface EngBlog {
+  id: string;
+  name: string;
+  link: string;
+  order_idx: number;
+  practice_problems: EngBlogProblem[];
+}
+
+export interface EngBlogsResponse {
+  blogs: EngBlog[];
+  total: number;
+}
+
 // API calls
 export const itemsApi = {
   // Get all items with optional filters
@@ -288,6 +308,31 @@ export const leetcodeApi = {
       console.error("Failed to fetch LeetCode contests:", error);
       throw error;
     }
+  }
+};
+
+export const engBlogsApi = {
+  // Get all engineering blogs
+  getEngBlogs: async (filters?: {
+    limit?: number;
+    offset?: number;
+  }) => {
+    const params = new URLSearchParams();
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined) {
+          params.append(key, value.toString());
+        }
+      });
+    }
+    const response = await api.get<EngBlogsResponse>(`/eng-blogs?${params.toString()}`);
+    return response.data;
+  },
+
+  // Get specific engineering blog
+  getEngBlog: async (id: string) => {
+    const response = await api.get<EngBlog>(`/eng-blogs/${id}`);
+    return response.data;
   }
 };
 
