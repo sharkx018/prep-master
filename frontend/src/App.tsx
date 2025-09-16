@@ -44,6 +44,8 @@ function App() {
                 </AdminRoute>
               } />
               <Route path="stats" element={<Stats />} />
+              {/* Catch-all route for unknown paths */}
+              <Route path="*" element={<Navigate to="/practice" replace />} />
             </Route>
           </Routes>
         </Router>
