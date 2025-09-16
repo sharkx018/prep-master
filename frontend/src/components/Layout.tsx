@@ -158,7 +158,7 @@ const Layout: React.FC = () => {
   }, [user, fetchStats]);
 
   const navigation = [
-    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+    // { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Practice', href: '/practice', icon: BookOpen },
     { name: 'Items', href: '/items', icon: List },
     { name: 'Contests', href: '/contests', icon: Trophy },

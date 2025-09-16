@@ -4,7 +4,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
-import Dashboard from './pages/Dashboard';
+// import Dashboard from './pages/Dashboard';
 import Items from './pages/Items';
 import Practice from './pages/Practice';
 import AddItem from './pages/AddItem';
@@ -18,7 +18,7 @@ const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAdmin } = useAuth();
   
   if (!isAdmin) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/practice" replace />;
   }
   
   return <>{children}</>;
@@ -32,8 +32,8 @@ function App() {
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-              <Route index element={<Navigate to="dashboard" replace />} />
-              <Route path="dashboard" element={<Dashboard />} />
+              <Route index element={<Navigate to="practice" replace />} />
+              {/* <Route path="dashboard" element={<Dashboard />} /> */}
               <Route path="items" element={<Items />} />
               <Route path="practice" element={<Practice />} />
               <Route path="contests" element={<Contest />} />
