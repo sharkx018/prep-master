@@ -497,6 +497,7 @@ func (r *ItemRepository) GetInProgressItemWithUserProgress(userID int) (*models.
 }
 
 // GetRandomPendingWithUserProgress retrieves a random pending item for a user
+// For miscellaneous category, it returns items sorted by ID in ascending order
 func (r *ItemRepository) GetRandomPendingWithUserProgress(userID int) (*models.ItemWithProgress, error) {
 	// Get distinct categories that have pending items
 	categoriesQuery := `
@@ -535,20 +536,39 @@ func (r *ItemRepository) GetRandomPendingWithUserProgress(userID int) (*models.I
 
 	// Try each category in the shuffled order
 	for _, category := range categories {
-		// Get a random pending item from this category
-		itemQuery := `
-			SELECT 
-				i.id, i.title, i.link, i.category, i.subcategory, i.attachments, i.created_at,
-				COALESCE(up.status, 'pending') as status,
-				COALESCE(up.starred, false) as starred,
-				COALESCE(up.notes, '') as notes,
-				up.completed_at
-			FROM items i
-			LEFT JOIN user_progress up 
-				ON i.id = up.item_id AND up.user_id = $1
-			WHERE i.category = $2 AND COALESCE(up.status, 'pending') = 'pending'
-			ORDER BY RANDOM() 
-			LIMIT 1`
+		var itemQuery string
+
+		// For miscellaneous category, sort by ID in ascending order instead of random
+		if category == models.CategoryMiscellaneous {
+			itemQuery = `
+				SELECT 
+					i.id, i.title, i.link, i.category, i.subcategory, i.attachments, i.created_at,
+					COALESCE(up.status, 'pending') as status,
+					COALESCE(up.starred, false) as starred,
+					COALESCE(up.notes, '') as notes,
+					up.completed_at
+				FROM items i
+				LEFT JOIN user_progress up 
+					ON i.id = up.item_id AND up.user_id = $1
+				WHERE i.category = $2 AND COALESCE(up.status, 'pending') = 'pending'
+				ORDER BY i.id ASC
+				LIMIT 1`
+		} else {
+			// For other categories, keep the random selection
+			itemQuery = `
+				SELECT 
+					i.id, i.title, i.link, i.category, i.subcategory, i.attachments, i.created_at,
+					COALESCE(up.status, 'pending') as status,
+					COALESCE(up.starred, false) as starred,
+					COALESCE(up.notes, '') as notes,
+					up.completed_at
+				FROM items i
+				LEFT JOIN user_progress up 
+					ON i.id = up.item_id AND up.user_id = $1
+				WHERE i.category = $2 AND COALESCE(up.status, 'pending') = 'pending'
+				ORDER BY RANDOM() 
+				LIMIT 1`
+		}
 
 		var item models.ItemWithProgress
 		err := r.db.QueryRow(itemQuery, userID, category).Scan(
@@ -562,7 +582,7 @@ func (r *ItemRepository) GetRandomPendingWithUserProgress(userID int) (*models.I
 			continue
 		}
 		if err != nil {
-			return nil, fmt.Errorf("failed to get random pending item from category %s: %w", category, err)
+			return nil, fmt.Errorf("failed to get pending item from category %s: %w", category, err)
 		}
 
 		// Found a pending item, return it
@@ -852,7 +872,7 @@ func (r *ItemRepository) GetCountsForUser(userID int) (total, completed, pending
 // GetCountsByCategoryForUser returns item counts by category and status for a specific user (excluding miscellaneous category)
 func (r *ItemRepository) GetCountsByCategoryForUser(userID int, removeMiscellaneous bool) (map[models.Category]map[models.Status]int, error) {
 	
-	
+
 	query := `
 		SELECT 
 			i.category,
@@ -879,7 +899,7 @@ func (r *ItemRepository) GetCountsByCategoryForUser(userID int, removeMiscellane
 	} else {
 		rows, err = r.db.Query(query, userID)
 	}
-	
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user category counts: %w", err)
 	}
