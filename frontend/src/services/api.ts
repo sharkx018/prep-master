@@ -196,6 +196,7 @@ export const itemsApi = {
     status?: string;
     limit?: number;
     offset?: number;
+    random_order?: boolean;
   }) => {
     const params = new URLSearchParams();
     if (filters) {

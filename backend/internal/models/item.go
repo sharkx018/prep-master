@@ -108,6 +108,7 @@ type ItemFilter struct {
 	Status      *Status   `json:"status,omitempty"`
 	Limit       *int      `json:"limit,omitempty"`
 	Offset      *int      `json:"offset,omitempty"`
+	RandomOrder *bool     `json:"random_order,omitempty"`
 }
 
 // PaginatedItemsResponse represents a paginated response for items

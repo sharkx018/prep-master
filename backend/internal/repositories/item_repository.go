@@ -220,7 +220,12 @@ func (r *ItemRepository) GetAllWithUserProgress(userID int, filter *models.ItemF
 		args = append(args, *filter.Status)
 	}
 
-	query += " ORDER BY i.created_at DESC"
+	// Add ordering - random if requested, otherwise by created_at
+	if filter.RandomOrder != nil && *filter.RandomOrder {
+		query += " ORDER BY RANDOM()"
+	} else {
+		query += " ORDER BY i.created_at DESC"
+	}
 
 	if filter.Limit != nil {
 		argCount++
@@ -899,7 +904,6 @@ func (r *ItemRepository) GetCountsForUser(userID int) (total, completed, pending
 // GetCountsByCategoryForUser returns item counts by category and status for a specific user (excluding miscellaneous category)
 func (r *ItemRepository) GetCountsByCategoryForUser(userID int, removeMiscellaneous bool) (map[models.Category]map[models.Status]int, error) {
 
-
 	query := `
 		SELECT 
 			i.category,
@@ -932,8 +936,6 @@ func (r *ItemRepository) GetCountsByCategoryForUser(userID int, removeMiscellane
 	}
 	defer rows.Close()
 
-	
-
 	result := make(map[models.Category]map[models.Status]int)
 
 	for rows.Next() {
@@ -945,7 +947,6 @@ func (r *ItemRepository) GetCountsByCategoryForUser(userID int, removeMiscellane
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan category count: %w", err)
 		}
-
 
 		if result[category] == nil {
 			result[category] = make(map[models.Status]int)

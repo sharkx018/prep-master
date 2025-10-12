@@ -194,6 +194,11 @@ func (h *ItemHandler) GetItemsPaginated(c *gin.Context) {
 		filter.Offset = &offset
 	}
 
+	if randomOrderStr := c.Query("random_order"); randomOrderStr != "" {
+		randomOrder := randomOrderStr == "true"
+		filter.RandomOrder = &randomOrder
+	}
+
 	// Use the new method that includes user progress
 	result, err := h.itemService.GetItemsPaginatedWithUserProgress(userID.(int), filter)
 	if err != nil {

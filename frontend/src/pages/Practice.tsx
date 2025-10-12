@@ -12,7 +12,8 @@ import {
   Hash,
   Info,
   Flame,
-  Clock
+  Clock,
+  Filter
 } from 'lucide-react';
 import { itemsApi, statsApi, testsApi, Item, Stats, ActiveTestResponse } from '../services/api';
 import MotivationalQuote from '../components/MotivationalQuote';
@@ -34,6 +35,15 @@ const Practice: React.FC = () => {
   const [loadingTest, setLoadingTest] = useState(false);
   const [creatingTest, setCreatingTest] = useState(false);
   const [testError, setTestError] = useState<string | null>(null);
+
+  // Filter and pagination states
+  const [filterStatus, setFilterStatus] = useState<'pending' | 'completed'>('pending');
+  const [filteredItems, setFilteredItems] = useState<Item[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [totalItems, setTotalItems] = useState(0);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const itemsPerPage = 30;
 
   const fetchStats = async () => {
     try {
@@ -62,6 +72,48 @@ const Practice: React.FC = () => {
     }
   };
 
+  const fetchFilteredItems = async (status: 'pending' | 'completed', page: number, append: boolean = false) => {
+    try {
+      if (append) {
+        setLoadingMore(true);
+      } else {
+        setLoadingCompletedItems(true);
+      }
+      
+      const offset = (page - 1) * itemsPerPage;
+      const statusFilter = status === 'pending' ? 'pending' : 'done';
+      const randomOrder = status === 'pending';
+      
+      const result = await itemsApi.getItemsPaginated({
+        status: statusFilter,
+        limit: itemsPerPage,
+        offset: offset,
+        random_order: randomOrder
+      });
+      
+      if (append) {
+        setFilteredItems(prev => [...prev, ...result.items]);
+      } else {
+        setFilteredItems(result.items);
+      }
+      
+      setHasMore(result.pagination.has_next);
+      setTotalItems(result.pagination.total);
+      setCurrentPage(page);
+    } catch (err) {
+      console.error('Failed to fetch filtered items:', err);
+    } finally {
+      setLoadingCompletedItems(false);
+      setLoadingMore(false);
+    }
+  };
+
+  const loadMoreItems = () => {
+    if (!loadingMore && hasMore) {
+      fetchFilteredItems(filterStatus, currentPage + 1, true);
+    }
+  };
+
   useEffect(() => {
     fetchStats();
     fetchNextItem();
@@ -69,6 +121,31 @@ const Practice: React.FC = () => {
     checkCanCreateTest();
     fetchActiveTest();
   }, []);
+
+  useEffect(() => {
+    // Reset page and fetch when filter changes
+    setCurrentPage(1);
+    fetchFilteredItems(filterStatus, 1, false);
+  }, [filterStatus]);
+
+  // Infinite scroll effect
+  useEffect(() => {
+    const handleScroll = () => {
+      if (loadingMore || !hasMore) return;
+
+      const scrollHeight = document.documentElement.scrollHeight;
+      const scrollTop = document.documentElement.scrollTop;
+      const clientHeight = document.documentElement.clientHeight;
+
+      // Load more when user is 200px from bottom
+      if (scrollHeight - scrollTop - clientHeight < 200) {
+        loadMoreItems();
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [loadingMore, hasMore, filterStatus, currentPage]);
 
   const checkCanCreateTest = async () => {
     try {
@@ -169,6 +246,9 @@ const Practice: React.FC = () => {
       
       // Fetch completed items again to update the list
       fetchCompletedItems();
+      
+      // Refresh filtered items
+      fetchFilteredItems(filterStatus, currentPage);
       
       // Fetch next item after marking complete
       await fetchNextItem();
@@ -731,111 +811,150 @@ const Practice: React.FC = () => {
         </div>
       )}
 
-      {/* Completed Items Section */}
+      {/* Filtered Items Section with Dropdown */}
       <div className="mt-12">
         <div className="flex items-center justify-between mb-4">
-          <div>
+          <div className="flex items-center space-x-4">
             <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
-              All Completed Items
+              Items List
             </h3>
-            {!loadingCompletedItems && completedItems.length > 0 && (
-              <p className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                Showing {completedItems.length} {completedItems.length === 1 ? 'item' : 'items'} completed
-              </p>
-            )}
+            {/* Dropdown Filter */}
+            <div className="relative">
+              <Filter className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 ${
+                isDarkMode ? 'text-gray-400' : 'text-gray-500'
+              }`} />
+              <select
+                value={filterStatus}
+                onChange={(e) => {
+                  setFilterStatus(e.target.value as 'pending' | 'completed');
+                  setCurrentPage(1);
+                }}
+                className={`pl-9 pr-4 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                  isDarkMode 
+                    ? 'bg-gray-700 border-gray-600 text-gray-200' 
+                    : 'bg-white border-gray-300 text-gray-900'
+                }`}
+              >
+                <option value="pending">Pending</option>
+                <option value="completed">Completed</option>
+              </select>
+            </div>
           </div>
-          <button 
-            onClick={fetchCompletedItems}
-            className={`inline-flex items-center text-xs px-2 py-1 rounded ${
-              isDarkMode 
-                ? 'text-indigo-400 hover:text-indigo-300' 
-                : 'text-indigo-600 hover:text-indigo-700'
-            }`}
-          >
-            <RefreshCw className="h-3 w-3 mr-1" />
-            Refresh
-          </button>
+          {!loadingCompletedItems && filteredItems.length > 0 && (
+            <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              Showing {totalItems} {totalItems === 1 ? 'item' : 'items'}
+            </p>
+          )}
         </div>
 
         {loadingCompletedItems ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-6 w-6 animate-spin text-indigo-600" />
           </div>
-        ) : completedItems.length === 0 ? (
+        ) : filteredItems.length === 0 ? (
           <div className={`rounded-lg border p-6 text-center ${
             isDarkMode 
               ? 'bg-gray-800/50 border-gray-700 text-gray-400' 
               : 'bg-gray-50 border-gray-200 text-gray-600'
           }`}>
-            No completed items yet. Start practicing to build your list!
+            No {filterStatus} items found.
           </div>
         ) : (
-          <div className={`shadow overflow-hidden rounded-lg ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
-            <ul className={`divide-y ${isDarkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
-              {completedItems.map((item) => (
-                <li key={item.id} className={`px-6 py-4 ${
-                  isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'
-                }`}>
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-3 mb-2">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getCategoryColor(item.category)}`}>
-                          {item.category.toUpperCase()}
-                        </span>
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {item.subcategory}
-                        </span>
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          Done
-                        </span>
-                        {item.starred && (
-                          <Star className="h-4 w-4 text-yellow-500 fill-current" />
+          <>
+            <div className={`shadow overflow-hidden rounded-lg ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+              <ul className={`divide-y ${isDarkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
+                {filteredItems.map((item) => (
+                  <li key={item.id} className={`px-6 py-4 ${
+                    isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'
+                  }`}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-3 mb-2">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getCategoryColor(item.category)}`}>
+                            {item.category.toUpperCase()}
+                          </span>
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-800'
+                          }`}>
+                            {item.subcategory}
+                          </span>
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            filterStatus === 'completed' 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-yellow-100 text-yellow-800'
+                          }`}>
+                            {filterStatus === 'completed' ? 'Done' : 'Pending'}
+                          </span>
+                          {item.starred && (
+                            <Star className="h-4 w-4 text-yellow-500 fill-current" />
+                          )}
+                        </div>
+                        <a
+                          href={item.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={`text-sm font-medium hover:underline ${isDarkMode ? 'text-gray-100 hover:text-indigo-400' : 'text-gray-900 hover:text-indigo-600'}`}
+                        >
+                          {item.title}
+                        </a>
+                        {filterStatus === 'completed' && item.completed_at && (
+                          <p className={`text-sm mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                            Completed on {new Date(item.completed_at).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </p>
+                        )}
+                        {renderAttachments(item.attachments)}
+                      </div>
+                      <div className="flex items-center space-x-2 ml-4">
+                        <a
+                          href={item.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-2 text-gray-400 hover:text-gray-600"
+                          title="Open link"
+                        >
+                          <ExternalLink className="h-5 w-5" />
+                        </a>
+                        {filterStatus === 'completed' && (
+                          <button
+                            className="p-2 transition-colors text-green-600"
+                            disabled
+                            title="Already completed"
+                          >
+                            <CheckCircle2 className="h-5 w-5" />
+                          </button>
                         )}
                       </div>
-                      <a
-                        href={item.link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={`text-sm font-medium hover:underline ${isDarkMode ? 'text-gray-100 hover:text-indigo-400' : 'text-gray-900 hover:text-indigo-600'}`}
-                      >
-                        {item.title}
-                      </a>
-                      <p className={`text-sm mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                        {item.completed_at && `Completed on ${new Date(item.completed_at).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}`}
-                      </p>
-                      {renderAttachments(item.attachments)}
                     </div>
-                    <div className="flex items-center space-x-2 ml-4">
-                      <a
-                        href={item.link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="p-2 text-gray-400 hover:text-gray-600"
-                        title="Open link"
-                      >
-                        <ExternalLink className="h-5 w-5" />
-                      </a>
-                      <button
-                        className="p-2 transition-colors text-green-600"
-                        disabled
-                        title="Already completed"
-                      >
-                        <CheckCircle2 className="h-5 w-5" />
-                      </button>
-                    </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Infinite Scroll Loading Indicator */}
+            {loadingMore && (
+              <div className="flex items-center justify-center py-6">
+                <Loader2 className="h-6 w-6 animate-spin text-indigo-600 mr-2" />
+                <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                  Loading more items...
+                </span>
+              </div>
+            )}
+
+            {/* End of list indicator */}
+            {!hasMore && filteredItems.length > 0 && (
+              <div className="flex items-center justify-center py-6">
+                <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                  ✓ You've reached the end of the list
+                </span>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
