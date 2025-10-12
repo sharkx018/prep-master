@@ -577,7 +577,7 @@ const Practice: React.FC = () => {
       )}
 
       {/* Test Feature Section */}
-      {(canCreateTest || activeTest) && (
+      {(loadingTest || canCreateTest || activeTest) && (
         <div className={`rounded-lg shadow-lg overflow-hidden mb-8 ${
           isDarkMode ? 'bg-gradient-to-r from-purple-900/30 to-pink-900/30 border border-purple-800' : 'bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200'
         }`}>
@@ -604,7 +604,14 @@ const Practice: React.FC = () => {
               </div>
             )}
 
-            {canCreateTest && !activeTest && (
+            {loadingTest ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-purple-600 mr-2" />
+                <span className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                  Loading test information...
+                </span>
+              </div>
+            ) : canCreateTest && !activeTest ? (
               <div>
                 <p className={`text-sm mb-4 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                   You have a miscellaneous item in progress. Create a test to revise 4 random completed items:
@@ -627,9 +634,7 @@ const Practice: React.FC = () => {
                   Create Test
                 </button>
               </div>
-            )}
-
-            {activeTest && activeTest.items && activeTest.items.length > 0 && (
+            ) : activeTest && activeTest.items && activeTest.items.length > 0 ? (
               <div>
                 <div className="mb-4">
                   <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
@@ -720,7 +725,7 @@ const Practice: React.FC = () => {
                   </div>
                 )}
               </div>
-            )}
+            ) : null}
           </div>
         </div>
       )}
