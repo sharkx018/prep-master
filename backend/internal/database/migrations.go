@@ -26,6 +26,7 @@ func RunMigrations(db *sql.DB) error {
 		addUserStatsCompletedAllCountColumn,
 		addMiscellaneousCategory,
 		createEngBlogsTable,
+		createTestsTable,
 	}
 
 	for i, migration := range migrations {
@@ -264,4 +265,23 @@ CREATE INDEX IF NOT EXISTS idx_eng_blogs_order ON eng_blogs(order_idx);
 CREATE INDEX IF NOT EXISTS idx_eng_blog_articles_blog_id ON eng_blog_articles(blog_id);
 CREATE INDEX IF NOT EXISTS idx_eng_blog_articles_order ON eng_blog_articles(order_idx);
 CREATE INDEX IF NOT EXISTS idx_eng_blog_articles_blog_order ON eng_blog_articles(blog_id, order_idx);
+`
+
+const createTestsTable = `
+CREATE TABLE IF NOT EXISTS tests (
+    id SERIAL PRIMARY KEY,
+    session_id UUID NOT NULL,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    item_id INTEGER NOT NULL REFERENCES items(id) ON DELETE CASCADE,
+    status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'completed', 'abandoned')),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_tests_session_id ON tests(session_id);
+CREATE INDEX IF NOT EXISTS idx_tests_user_id ON tests(user_id);
+CREATE INDEX IF NOT EXISTS idx_tests_item_id ON tests(item_id);
+CREATE INDEX IF NOT EXISTS idx_tests_status ON tests(status);
+CREATE INDEX IF NOT EXISTS idx_tests_user_session ON tests(user_id, session_id);
+CREATE INDEX IF NOT EXISTS idx_tests_user_status ON tests(user_id, status);
 `

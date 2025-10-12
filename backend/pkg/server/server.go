@@ -17,12 +17,13 @@ type Server struct {
 	statsHandler     *handlers.StatsHandler
 	authHandler      *handlers.AuthHandler
 	engBlogHandler   *handlers.EngBlogHandler
+	testHandler      *handlers.TestHandler
 	userProgressRepo *repositories.UserProgressRepository
 }
 
 
 // New creates a new server instance
-func New(cfg *config.Config, itemHandler *handlers.ItemHandler, statsHandler *handlers.StatsHandler, authHandler *handlers.AuthHandler, engBlogHandler *handlers.EngBlogHandler, userProgressRepo *repositories.UserProgressRepository) *Server {
+func New(cfg *config.Config, itemHandler *handlers.ItemHandler, statsHandler *handlers.StatsHandler, authHandler *handlers.AuthHandler, engBlogHandler *handlers.EngBlogHandler, testHandler *handlers.TestHandler, userProgressRepo *repositories.UserProgressRepository) *Server {
 	// Set Gin mode based on environment
 	if cfg.IsProduction() {
 		gin.SetMode(gin.ReleaseMode)
@@ -37,6 +38,7 @@ func New(cfg *config.Config, itemHandler *handlers.ItemHandler, statsHandler *ha
 		statsHandler:     statsHandler,
 		authHandler:      authHandler,
 		engBlogHandler:   engBlogHandler,
+		testHandler:      testHandler,
 		userProgressRepo: userProgressRepo,
 	}
 }
@@ -129,6 +131,17 @@ func (s *Server) setupRoutes() {
 		{
 			engBlogs.GET("", s.engBlogHandler.GetEngBlogs)
 			engBlogs.GET("/:id", s.engBlogHandler.GetEngBlog)
+		}
+
+		// Test routes
+		tests := v1.Group("/tests")
+		{
+			tests.POST("", s.testHandler.CreateTest)
+			tests.GET("/active", s.testHandler.GetActiveTest)
+			tests.GET("/can-create", s.testHandler.CheckCanCreateTest)
+			tests.PUT("/:session_id/:item_id/complete", s.testHandler.CompleteTest)
+			tests.PUT("/:session_id/:item_id/abandon", s.testHandler.AbandonTest)
+			tests.DELETE("/:session_id", s.testHandler.DeleteTest)
 		}
 	}
 

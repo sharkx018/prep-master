@@ -871,7 +871,7 @@ func (r *ItemRepository) GetCountsForUser(userID int) (total, completed, pending
 
 // GetCountsByCategoryForUser returns item counts by category and status for a specific user (excluding miscellaneous category)
 func (r *ItemRepository) GetCountsByCategoryForUser(userID int, removeMiscellaneous bool) (map[models.Category]map[models.Status]int, error) {
-	
+
 
 	query := `
 		SELECT 
@@ -973,4 +973,77 @@ func (r *ItemRepository) GetCountsBySubcategoryForUser(userID int) (map[models.C
 	}
 
 	return result, nil
+}
+
+// GetRandomItems retrieves random items with user progress based on filters
+func (r *ItemRepository) GetRandomItems(userID int, filter *models.ItemFilter) ([]models.ItemWithProgress, error) {
+	query := `
+		SELECT 
+			i.id, i.title, i.link, i.category, i.subcategory, i.attachments, i.created_at,
+			COALESCE(up.status, 'pending') as status,
+			COALESCE(up.starred, false) as starred,
+			COALESCE(up.notes, '') as notes,
+			up.completed_at
+		FROM items i
+		LEFT JOIN user_progress up 
+			ON i.id = up.item_id AND up.user_id = $1
+		WHERE 1=1`
+
+	args := []interface{}{userID}
+	argCount := 1
+
+	// Build WHERE clause based on filters
+	if filter.Category != nil {
+		argCount++
+		query += fmt.Sprintf(" AND i.category = $%d", argCount)
+		args = append(args, *filter.Category)
+	}
+
+	if filter.Subcategory != nil {
+		argCount++
+		query += fmt.Sprintf(" AND i.subcategory = $%d", argCount)
+		args = append(args, *filter.Subcategory)
+	}
+
+	if filter.Status != nil {
+		argCount++
+		query += fmt.Sprintf(" AND COALESCE(up.status, 'pending') = $%d", argCount)
+		args = append(args, *filter.Status)
+	}
+
+	// Add random ordering
+	query += " ORDER BY RANDOM()"
+
+	// Add limit
+	if filter.Limit != nil {
+		argCount++
+		query += fmt.Sprintf(" LIMIT $%d", argCount)
+		args = append(args, *filter.Limit)
+	}
+
+	rows, err := r.db.Query(query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get random items: %w", err)
+	}
+	defer rows.Close()
+
+	var items []models.ItemWithProgress
+	for rows.Next() {
+		var item models.ItemWithProgress
+		err := rows.Scan(
+			&item.ID, &item.Title, &item.Link, &item.Category, &item.Subcategory,
+			&item.Attachments, &item.CreatedAt, &item.Status, &item.Starred,
+			&item.Notes, &item.CompletedAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan random item: %w", err)
+		}
+		items = append(items, item)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating random items: %w", err)
+	}
+
+	return items, nil
 }

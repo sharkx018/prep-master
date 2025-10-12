@@ -26,6 +26,11 @@ const (
 	StatusDone       Status = "done"
 )
 
+// Special subcategory constants
+const (
+	Test_n_revise = "test_n_revise"
+)
+
 // Attachments represents a JSON map for dynamic attributes
 type Attachments map[string]string
 
@@ -253,6 +258,7 @@ var CommonSubcategories = map[Category][]string{
 		"development",
 		"sql",
 		"books",
+		Test_n_revise,
 		"other",
 	},
 }

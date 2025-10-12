@@ -11,13 +11,15 @@ import (
 type ItemService struct {
 	itemRepo  *repositories.ItemRepository
 	statsRepo *repositories.StatsRepository
+	testRepo  *repositories.TestRepository
 }
 
 // NewItemService creates a new item service
-func NewItemService(itemRepo *repositories.ItemRepository, statsRepo *repositories.StatsRepository) *ItemService {
+func NewItemService(itemRepo *repositories.ItemRepository, statsRepo *repositories.StatsRepository, testRepo *repositories.TestRepository) *ItemService {
 	return &ItemService{
 		itemRepo:  itemRepo,
 		statsRepo: statsRepo,
+		testRepo:  testRepo,
 	}
 }
 
@@ -316,8 +318,17 @@ func (s *ItemService) SkipItemWithUserProgress(userID int) (*models.ItemWithProg
 		return nil, fmt.Errorf("invalid user ID")
 	}
 
+	isInTest, err := s.testRepo.IsItemInActiveTest(userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check if test is active: %w", err)
+	}
+
+	if isInTest {
+		return nil, fmt.Errorf("cannot skip item: test is active")
+	}
+
 	// First, reset any existing in-progress items for this user back to pending
-	err := s.itemRepo.ResetInProgressItemsForUser(userID)
+	err = s.itemRepo.ResetInProgressItemsForUser(userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to reset in-progress items: %w", err)
 	}
@@ -354,6 +365,16 @@ func (s *ItemService) CompleteItemWithUserProgress(userID, itemID int) (*models.
 		return nil, fmt.Errorf("invalid item ID")
 	}
 
+	// Check if the item is part of an active test
+	isInTest, err := s.testRepo.IsItemInActiveTest(userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check if test is active: %w", err)
+	}
+
+	if isInTest {
+		return nil, fmt.Errorf("cannot skip item: test is active")
+	}
+
 	// Mark item as complete for the user
 	item, err := s.itemRepo.CompleteItemForUser(userID, itemID)
 	if err != nil {
@@ -388,7 +409,6 @@ func (s *ItemService) CompleteItemWithUserProgress(userID, itemID int) (*models.
 	// If yes, reset all miscellaneous items back to pending
 	categoryCounts, err := s.itemRepo.GetCountsByCategoryForUser(userID, false)
 
-	
 	fmt.Println("categoryCounts---------", categoryCounts)
 	if err != nil {
 		// Log error but don't fail the completion
