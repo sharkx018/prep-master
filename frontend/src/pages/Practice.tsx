@@ -509,7 +509,7 @@ const Practice: React.FC = () => {
                 <CheckCircle className="h-5 w-5 text-purple-600" />
               </div>
               <h3 className={`text-lg font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
-                Test & Revise
+              Revise & Test completed items
               </h3>
             </div>
 
