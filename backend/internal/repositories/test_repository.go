@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"interview-prep-app/internal/models"
+
+	"github.com/lib/pq"
 )
 
 // TestRepository handles database operations for tests
@@ -35,7 +37,7 @@ func (r *TestRepository) CreateTestItems(userID int, itemIDs []int) (string, err
 
 	query := `
 		INSERT INTO tests (session_id, user_id, item_id, status)
-		VALUES ($1, $2, $3, 'active')`
+		VALUES ($1, $2, $3, 'pending')`
 
 	for _, itemID := range itemIDs {
 		_, err := tx.Exec(query, sessionID, userID, itemID)
@@ -51,32 +53,32 @@ func (r *TestRepository) CreateTestItems(userID int, itemIDs []int) (string, err
 	return sessionID, nil
 }
 
-// GetActiveTestByUser retrieves the active test session for a user
-func (r *TestRepository) GetActiveTestByUser(userID int) (string, []int, error) {
+// GetTestByUserWithStatus retrieves a test session for a user filtered by status
+func (r *TestRepository) GetTestByUserWithStatus(userID int, itemStatus []string) (string, []int, error) {
 	query := `
-		SELECT DISTINCT session_id
+		SELECT session_id
 		FROM tests
-		WHERE user_id = $1 AND status = 'active'
+		WHERE user_id = $1 AND status = ANY($2)
 		ORDER BY created_at DESC
 		LIMIT 1`
 
 	var sessionID string
-	err := r.db.QueryRow(query, userID).Scan(&sessionID)
+	err := r.db.QueryRow(query, userID, pq.Array(itemStatus)).Scan(&sessionID)
 	if err == sql.ErrNoRows {
-		return "", nil, nil // No active test found
+		return "", nil, nil // No test found
 	}
 	if err != nil {
-		return "", nil, fmt.Errorf("failed to get active test: %w", err)
+		return "", nil, fmt.Errorf("failed to get test: %w", err)
 	}
 
-	// Get all item IDs for this session
+	// Get all item IDs for this session with the specified statuses
 	itemQuery := `
 		SELECT item_id
 		FROM tests
-		WHERE user_id = $1 AND session_id = $2 AND status = 'active'
+		WHERE user_id = $1 AND session_id = $2 AND status = ANY($3)
 		ORDER BY id`
 
-	rows, err := r.db.Query(itemQuery, userID, sessionID)
+	rows, err := r.db.Query(itemQuery, userID, sessionID, pq.Array(itemStatus))
 	if err != nil {
 		return "", nil, fmt.Errorf("failed to get test items: %w", err)
 	}
@@ -205,19 +207,19 @@ func (r *TestRepository) GetTestCreatedAt(userID int, sessionID string) (time.Ti
 	return createdAt, nil
 }
 
-// IsItemInActiveTest checks if an item is part of an active test for a user
-func (r *TestRepository) IsItemInActiveTest(userID int) (bool, error) {
+// IsItemInPendingTest checks if an item is part of an pending test for a user
+func (r *TestRepository) IsItemInPendingTest(userID int) (bool, error) {
 	query := `
 		SELECT EXISTS(
 			SELECT 1
 			FROM tests
-			WHERE user_id = $1 AND status = 'active'
+			WHERE user_id = $1 AND status = 'pending'
 		)`
 
 	var exists bool
 	err := r.db.QueryRow(query, userID).Scan(&exists)
 	if err != nil {
-		return false, fmt.Errorf("failed to check if item is in active test: %w", err)
+		return false, fmt.Errorf("failed to check if item is in pending test: %w", err)
 	}
 
 	return exists, nil

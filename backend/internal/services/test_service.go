@@ -24,7 +24,7 @@ func NewTestService(testRepo *repositories.TestRepository, itemRepo *repositorie
 // CreateTest creates a new test with random completed items from different categories
 func (s *TestService) CreateTest(userID int) (*models.CreateTestResponse, error) {
 	// Check if user already has an active test
-	existingSessionID, _, err := s.testRepo.GetActiveTestByUser(userID)
+	existingSessionID, _, err := s.testRepo.GetTestByUserWithStatus(userID, []string{"pending"})
 	if err != nil {
 		return nil, fmt.Errorf("failed to check for existing test: %w", err)
 	}
@@ -52,11 +52,13 @@ func (s *TestService) CreateTest(userID int) (*models.CreateTestResponse, error)
 
 	// Get 1 random completed item from LLD
 	lldCategory := models.CategoryLLD
+	lldSubcategory := "lld-interview-questions"
 	lldLimit := 1
 	lldFilter := &models.ItemFilter{
-		Category: &lldCategory,
-		Status:   &doneStatus,
-		Limit:    &lldLimit,
+		Category:    &lldCategory,
+		Subcategory: &lldSubcategory,
+		Status:      &doneStatus,
+		Limit:       &lldLimit,
 	}
 	lldItems, err := s.itemRepo.GetRandomItems(userID, lldFilter)
 	if err != nil {
@@ -88,6 +90,11 @@ func (s *TestService) CreateTest(userID int) (*models.CreateTestResponse, error)
 	allItems := append(dsaItems, lldItems...)
 	allItems = append(allItems, hldItems...)
 
+	// override the status
+	for idx, _ := range allItems {
+		allItems[idx].Status = "pending"
+	}
+
 	// Extract item IDs
 	itemIDs := make([]int, len(allItems))
 	for i, item := range allItems {
@@ -109,7 +116,9 @@ func (s *TestService) CreateTest(userID int) (*models.CreateTestResponse, error)
 
 // GetActiveTest retrieves the current active test for a user
 func (s *TestService) GetActiveTest(userID int) (*models.ActiveTestResponse, error) {
-	sessionID, itemIDs, err := s.testRepo.GetActiveTestByUser(userID)
+	
+	// check if there is pending session_id
+	sessionID, itemIDs, err := s.testRepo.GetTestByUserWithStatus(userID, []string{"pending"})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get active test: %w", err)
 	}
@@ -118,10 +127,16 @@ func (s *TestService) GetActiveTest(userID int) (*models.ActiveTestResponse, err
 		return nil, nil // No active test
 	}
 
+	// it means there is testing active and some items are in pending
+	sessionID, itemIDs, err = s.testRepo.GetTestByUserWithStatus(userID, []string{"pending", "completed"})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get active test: %w", err)
+	}
+
 	// Get items with user progress
 	items := make([]models.ItemWithProgress, 0, len(itemIDs))
 	for _, itemID := range itemIDs {
-		item, err := s.itemRepo.GetByIDWithUserProgress(userID, itemID)
+		item, err := s.itemRepo.GetItemByIDForTest(userID, itemID, sessionID)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get item %d: %w", itemID, err)
 		}

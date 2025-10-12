@@ -318,7 +318,7 @@ func (s *ItemService) SkipItemWithUserProgress(userID int) (*models.ItemWithProg
 		return nil, fmt.Errorf("invalid user ID")
 	}
 
-	isInTest, err := s.testRepo.IsItemInActiveTest(userID)
+	isInTest, err := s.testRepo.IsItemInPendingTest(userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check if test is active: %w", err)
 	}
@@ -366,13 +366,13 @@ func (s *ItemService) CompleteItemWithUserProgress(userID, itemID int) (*models.
 	}
 
 	// Check if the item is part of an active test
-	isInTest, err := s.testRepo.IsItemInActiveTest(userID)
+	isInTest, err := s.testRepo.IsItemInPendingTest(userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check if test is active: %w", err)
 	}
 
 	if isInTest {
-		return nil, fmt.Errorf("cannot skip item: test is active")
+		return nil, fmt.Errorf("cannot complete item: test is active")
 	}
 
 	// Mark item as complete for the user

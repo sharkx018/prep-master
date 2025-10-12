@@ -273,7 +273,7 @@ CREATE TABLE IF NOT EXISTS tests (
     session_id UUID NOT NULL,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     item_id INTEGER NOT NULL REFERENCES items(id) ON DELETE CASCADE,
-    status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'completed', 'abandoned')),
+    status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('pending', 'completed', 'abandoned')),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

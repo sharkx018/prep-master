@@ -8,7 +8,7 @@ import (
 type TestStatus string
 
 const (
-	TestStatusActive    TestStatus = "active"
+	TestStatusPending    TestStatus = "pending"
 	TestStatusCompleted TestStatus = "completed"
 	TestStatusAbandoned TestStatus = "abandoned"
 )
@@ -53,7 +53,7 @@ type ActiveTestResponse struct {
 // IsValidTestStatus checks if a test status is valid
 func IsValidTestStatus(status TestStatus) bool {
 	switch status {
-	case TestStatusActive, TestStatusCompleted, TestStatusAbandoned:
+	case TestStatusPending, TestStatusCompleted, TestStatusAbandoned:
 		return true
 	}
 	return false
@@ -61,5 +61,5 @@ func IsValidTestStatus(status TestStatus) bool {
 
 // ValidTestStatuses returns a slice of all valid test statuses
 func ValidTestStatuses() []TestStatus {
-	return []TestStatus{TestStatusActive, TestStatusCompleted, TestStatusAbandoned}
+	return []TestStatus{TestStatusPending, TestStatusCompleted, TestStatusAbandoned}
 }

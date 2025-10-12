@@ -99,6 +99,33 @@ func (r *ItemRepository) GetByIDWithUserProgress(userID, itemID int) (*models.It
 	return &item, nil
 }
 
+// GetByIDWithUserProgress retrieves an item by its ID with user-specific progress data
+func (r *ItemRepository) GetItemByIDForTest(userID, itemID int, sessionID string) (*models.ItemWithProgress, error) {
+	query := `
+		SELECT 
+			i.id, i.title, i.link, i.category, i.subcategory, i.attachments,
+			COALESCE(t.status, 'pending') as status
+		FROM items i
+		LEFT JOIN tests t 
+			ON t.item_id = i.id AND t.user_id = $1 AND t.session_id = $2
+		WHERE i.id = $3`
+
+	var item models.ItemWithProgress
+	err := r.db.QueryRow(query, userID, sessionID, itemID).Scan(
+		&item.ID, &item.Title, &item.Link, &item.Category, &item.Subcategory,
+		&item.Attachments, &item.Status,
+	)
+
+	if err == sql.ErrNoRows {
+		return nil, fmt.Errorf("item not found")
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to get item with user progress: %w", err)
+	}
+
+	return &item, nil
+}
+
 // GetAll retrieves items with optional filtering
 func (r *ItemRepository) GetAll(filter *models.ItemFilter) ([]*models.Item, error) {
 	query := "SELECT id, title, link, category, subcategory, attachments, created_at FROM items WHERE 1=1"

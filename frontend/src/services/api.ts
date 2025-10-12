@@ -45,7 +45,7 @@ export interface Item {
   link: string;
   category: 'dsa' | 'lld' | 'hld';
   subcategory: string;
-  status: 'done' | 'pending' | 'in-progress';
+  status: 'done' | 'pending' | 'in-progress' | 'completed' | 'abandoned';
   starred: boolean;
   attachments: { [key: string]: string };
   created_at: string;
@@ -147,6 +147,24 @@ export interface EngBlog {
 export interface EngBlogsResponse {
   blogs: EngBlog[];
   total: number;
+}
+
+export interface TestItem {
+  session_id: string;
+  items: Item[];
+  message?: string;
+  created_at?: string;
+}
+
+export interface ActiveTestResponse {
+  session_id: string;
+  items: Item[];
+  created_at: string;
+}
+
+export interface CanCreateTestResponse {
+  can_create: boolean;
+  reason: string;
 }
 
 // API calls
@@ -334,6 +352,44 @@ export const engBlogsApi = {
     const response = await api.get<EngBlog>(`/eng-blogs/${id}`);
     return response.data;
   }
+};
+
+export const testsApi = {
+  // Create a new test
+  createTest: async () => {
+    const response = await api.post<TestItem>('/tests');
+    return response.data;
+  },
+
+  // Get active test
+  getActiveTest: async () => {
+    const response = await api.get<ActiveTestResponse>('/tests/active');
+    return response.data;
+  },
+
+  // Check if user can create a test
+  canCreateTest: async () => {
+    const response = await api.get<CanCreateTestResponse>('/tests/can-create');
+    return response.data;
+  },
+
+  // Mark test item as complete
+  completeTestItem: async (sessionId: string, itemId: number) => {
+    const response = await api.put(`/tests/${sessionId}/${itemId}/complete`);
+    return response.data;
+  },
+
+  // Mark test item as abandoned
+  abandonTestItem: async (sessionId: string, itemId: number) => {
+    const response = await api.put(`/tests/${sessionId}/${itemId}/abandon`);
+    return response.data;
+  },
+
+  // Delete test
+  deleteTest: async (sessionId: string) => {
+    const response = await api.delete(`/tests/${sessionId}`);
+    return response.data;
+  },
 };
 
 export default api; 

@@ -14,7 +14,7 @@ import {
   Flame,
   Clock
 } from 'lucide-react';
-import { itemsApi, statsApi, Item, Stats } from '../services/api';
+import { itemsApi, statsApi, testsApi, Item, Stats, ActiveTestResponse } from '../services/api';
 import MotivationalQuote from '../components/MotivationalQuote';
 
 const Practice: React.FC = () => {
@@ -27,6 +27,13 @@ const Practice: React.FC = () => {
   const [stats, setStats] = useState<Stats | null>(null);
   const [completedItems, setCompletedItems] = useState<Item[]>([]);
   const [loadingCompletedItems, setLoadingCompletedItems] = useState(false);
+  
+  // Test feature states
+  const [canCreateTest, setCanCreateTest] = useState(false);
+  const [activeTest, setActiveTest] = useState<ActiveTestResponse | null>(null);
+  const [loadingTest, setLoadingTest] = useState(false);
+  const [creatingTest, setCreatingTest] = useState(false);
+  const [testError, setTestError] = useState<string | null>(null);
 
   const fetchStats = async () => {
     try {
@@ -59,7 +66,74 @@ const Practice: React.FC = () => {
     fetchStats();
     fetchNextItem();
     fetchCompletedItems();
+    checkCanCreateTest();
+    fetchActiveTest();
   }, []);
+
+  const checkCanCreateTest = async () => {
+    try {
+      const response = await testsApi.canCreateTest();
+      setCanCreateTest(response.can_create);
+    } catch (err) {
+      console.error('Failed to check can create test:', err);
+    }
+  };
+
+  const fetchActiveTest = async () => {
+    try {
+      setLoadingTest(true);
+      const response = await testsApi.getActiveTest();
+      // Check if response has a message property (no active test)
+      if (response && 'message' in response) {
+        setActiveTest(null);
+      } else {
+        setActiveTest(response);
+      }
+    } catch (err: any) {
+      if (err.response?.status !== 404) {
+        console.error('Failed to fetch active test:', err);
+      }
+      setActiveTest(null);
+    } finally {
+      setLoadingTest(false);
+    }
+  };
+
+  const createTest = async () => {
+    try {
+      setCreatingTest(true);
+      setTestError(null);
+      const response = await testsApi.createTest();
+      setActiveTest({
+        session_id: response.session_id,
+        items: response.items,
+        created_at: response.created_at || new Date().toISOString()
+      });
+      setCanCreateTest(false);
+    } catch (err: any) {
+      setTestError(err.response?.data?.error || 'Failed to create test');
+      console.error('Failed to create test:', err);
+    } finally {
+      setCreatingTest(false);
+    }
+  };
+
+  const completeTestItem = async (sessionId: string, itemId: number) => {
+    try {
+      await testsApi.completeTestItem(sessionId, itemId);
+      // Refresh active test to update the item status
+      await fetchActiveTest();
+      // Refresh stats
+      fetchStats();
+      // Check if user can create a new test
+      await checkCanCreateTest();
+      // Dispatch custom event for widget to refresh
+      window.dispatchEvent(new CustomEvent('itemCompleted'));
+    } catch (err: any) {
+      setTestError(err.response?.data?.error || 'Failed to complete test item');
+      console.error('Failed to complete test item:', err);
+    }
+  };
 
   const fetchNextItem = async () => {
     try {
@@ -100,8 +174,10 @@ const Practice: React.FC = () => {
       await fetchNextItem();
       // Refresh stats after completing
       fetchStats();
-    } catch (err) {
-      setError('Failed to mark item as complete');
+      // Check if user can create a test after completing an item
+      await checkCanCreateTest();
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to mark item as complete');
       console.error(err);
     } finally {
       setCompleting(false);
@@ -116,12 +192,14 @@ const Practice: React.FC = () => {
       setCurrentItem(item);
       // Refresh stats when skipping
       fetchStats();
+      // Check if user can create a test after skipping
+      await checkCanCreateTest();
     } catch (err: any) {
       if (err.response?.status === 404) {
         setNoItems(true);
         setCurrentItem(null);
       } else {
-        setError('Failed to skip item');
+        setError(err.response?.data?.error || 'Failed to skip item');
         console.error(err);
       }
     } finally {
@@ -415,6 +493,155 @@ const Practice: React.FC = () => {
           <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
             You've completed all items. Great job! 🎉
           </p>
+        </div>
+      )}
+
+      {/* Test Feature Section */}
+      {(canCreateTest || activeTest) && (
+        <div className={`rounded-lg shadow-lg overflow-hidden mb-8 ${
+          isDarkMode ? 'bg-gradient-to-r from-purple-900/30 to-pink-900/30 border border-purple-800' : 'bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200'
+        }`}>
+          <div className="p-6">
+            <div className="flex items-center mb-4">
+              <div className={`p-2 rounded-lg shadow-sm mr-3 ${
+                isDarkMode ? 'bg-gray-700' : 'bg-white'
+              }`}>
+                <CheckCircle className="h-5 w-5 text-purple-600" />
+              </div>
+              <h3 className={`text-lg font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+                Test & Revise
+              </h3>
+            </div>
+
+            {testError && (
+              <div className={`mb-4 border px-4 py-3 rounded-lg flex items-center ${
+                isDarkMode 
+                  ? 'bg-red-900/20 border-red-800 text-red-300' 
+                  : 'bg-red-50 border-red-200 text-red-700'
+              }`}>
+                <AlertCircle className="h-5 w-5 mr-2" />
+                {testError}
+              </div>
+            )}
+
+            {canCreateTest && !activeTest && (
+              <div>
+                <p className={`text-sm mb-4 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                  You have a miscellaneous item in progress. Create a test to revise 4 random completed items:
+                </p>
+                <ul className={`text-sm mb-4 list-disc list-inside ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                  <li>2 random DSA items</li>
+                  <li>1 random LLD item</li>
+                  <li>1 random HLD item (interview questions)</li>
+                </ul>
+                <button
+                  onClick={createTest}
+                  disabled={creatingTest}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {creatingTest ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                  )}
+                  Create Test
+                </button>
+              </div>
+            )}
+
+            {activeTest && activeTest.items && activeTest.items.length > 0 && (
+              <div>
+                <div className="mb-4">
+                  <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    Active test with {activeTest.items.length} items
+                  </p>
+                </div>
+
+                <div className="space-y-3">
+                  {activeTest.items.map((item, index) => (
+                    <div
+                      key={item.id}
+                      className={`rounded-lg p-4 border ${
+                        item.status === 'completed' 
+                          ? isDarkMode 
+                            ? 'bg-green-900/20 border-green-800' 
+                            : 'bg-green-50 border-green-200'
+                          : isDarkMode 
+                            ? 'bg-gray-700 border-gray-600' 
+                            : 'bg-white border-gray-200'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getCategoryColor(item.category)}`}>
+                              {item.category.toUpperCase()}
+                            </span>
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                              isDarkMode ? 'bg-gray-600 text-gray-300' : 'bg-gray-100 text-gray-800'
+                            }`}>
+                              {item.subcategory}
+                            </span>
+                            {item.status === 'completed' && (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                <CheckCircle className="h-3 w-3 mr-1" />
+                                Completed
+                              </span>
+                            )}
+                          </div>
+                          <a
+                            href={item.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={`text-sm font-medium hover:underline ${isDarkMode ? 'text-gray-100 hover:text-purple-400' : 'text-gray-900 hover:text-purple-600'}`}
+                          >
+                            {item.title}
+                          </a>
+                        </div>
+                        <div className="flex items-center space-x-2 ml-4">
+                          <a
+                            href={item.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={`p-2 rounded-md ${
+                              isDarkMode 
+                                ? 'text-gray-400 hover:text-gray-300 hover:bg-gray-600' 
+                                : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
+                            }`}
+                            title="Open link"
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                          </a>
+                          {item.status !== 'completed' && (
+                            <button
+                              onClick={() => completeTestItem(activeTest.session_id, item.id)}
+                              className="px-3 py-1 text-xs rounded-md text-white bg-green-600 hover:bg-green-700"
+                              title="Mark as complete"
+                            >
+                              Complete
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {activeTest.items.every(item => item.status === 'completed') && (
+                  <div className={`mt-4 p-4 rounded-lg border ${
+                    isDarkMode 
+                      ? 'bg-green-900/20 border-green-800 text-green-300' 
+                      : 'bg-green-50 border-green-200 text-green-700'
+                  }`}>
+                    <div className="flex items-center">
+                      <CheckCircle className="h-5 w-5 mr-2" />
+                      <span className="text-sm font-medium">Test completed! All items have been reviewed.</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
