@@ -732,83 +732,148 @@ const Practice: React.FC = () => {
 
       {/* Current Item Section */}
       {currentItem && !loading && (
-        <div className={`rounded-lg shadow-lg overflow-hidden mb-8 ${
-          isDarkMode ? 'bg-gray-800' : 'bg-white'
+        <div className={`rounded-lg shadow-sm border overflow-hidden mb-8 ${
+          isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
         }`}>
-          <div className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-3">
-                <span className={`inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium ${getCategoryColor(currentItem.category)}`}>
+          <div className="p-4">
+            {/* Header with badges and title */}
+            <div className="mb-3">
+              <div className="flex items-center gap-2 mb-2">
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold ${getCategoryColor(currentItem.category)}`}>
                   {currentItem.category.toUpperCase()}
                 </span>
-                <span className={`inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium ${
-                  isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-800'
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium ${
+                  isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'
                 }`}>
                   {currentItem.subcategory}
                 </span>
                 {currentItem.starred && (
-                  <Star className="h-5 w-5 text-yellow-500 fill-current" />
+                  <Star className="h-4 w-4 text-yellow-500 fill-current" />
                 )}
+                <span className={`text-xs ml-auto ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  {getCategoryFullName(currentItem.category)}
+                </span>
               </div>
+
+              <h3 className={`text-lg font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+                <a
+                  href={currentItem.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-indigo-600 transition-colors"
+                >
+                  {currentItem.title}
+                </a>
+              </h3>
             </div>
 
-            <h3 className={`text-xl font-semibold mb-2 ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+            {/* Attachments - Compact Version */}
+            {currentItem.attachments && Object.keys(currentItem.attachments).length > 0 && (
+              <div className={`mb-3 p-3 rounded-lg border ${
+                isDarkMode 
+                  ? 'bg-gray-700/30 border-gray-600' 
+                  : 'bg-gray-50 border-gray-200'
+              }`}>
+                <div className="flex items-center flex-wrap gap-2">
+                  <Info className={`h-4 w-4 ${isDarkMode ? 'text-indigo-400' : 'text-indigo-600'}`} />
+                  {Object.entries(currentItem.attachments).map(([key, value]) => {
+                    const isDifficulty = key.toLowerCase().includes('diff');
+                    const getDifficultyColor = (val: string) => {
+                      const lowerValue = val.toLowerCase();
+                      if (lowerValue === 'easy') return 'bg-green-100 text-green-700 border-green-200';
+                      if (lowerValue === 'medium' || lowerValue === 'med') return 'bg-yellow-100 text-yellow-700 border-yellow-200';
+                      if (lowerValue === 'hard') return 'bg-red-100 text-red-700 border-red-200';
+                      return isDarkMode ? 'bg-gray-700 text-gray-300 border-gray-600' : 'bg-white text-gray-700 border-gray-300';
+                    };
+                    
+                    if (isValidUrl(value)) {
+                      return (
+                        <a
+                          key={key}
+                          href={value}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium border transition-all ${
+                            isDarkMode ? 'bg-gray-700 text-gray-300 border-gray-600 hover:bg-gray-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
+                          }`}
+                        >
+                          {key.toLowerCase().includes('youtube') || key.toLowerCase().includes('video') ? (
+                            <span>📹 {key.replace(/[-_]/g, ' ')}</span>
+                          ) : key.toLowerCase().includes('github') || key.toLowerCase().includes('git') ? (
+                            <span>💻 {key.replace(/[-_]/g, ' ')}</span>
+                          ) : (
+                            <span>🔗 {key.replace(/[-_]/g, ' ')}</span>
+                          )}
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+                      );
+                    } else if (isDifficulty) {
+                      return (
+                        <span
+                          key={key}
+                          className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold border ${getDifficultyColor(value)}`}
+                        >
+                          {key.replace(/[-_]/g, ' ')}: {value.charAt(0).toUpperCase() + value.slice(1)}
+                        </span>
+                      );
+                    } else {
+                      return (
+                        <span
+                          key={key}
+                          className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium border ${
+                            isDarkMode ? 'bg-gray-700 text-gray-300 border-gray-600' : 'bg-white text-gray-700 border-gray-300'
+                          }`}
+                        >
+                          {key.replace(/[-_]/g, ' ')}: {value}
+                        </span>
+                      );
+                    }
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex items-center justify-between gap-3">
               <a
                 href={currentItem.link}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hover:text-indigo-600 transition-colors"
-              >
-                {currentItem.title}
-              </a>
-            </h3>
-
-            <p className={`text-sm mb-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-              Category: {getCategoryFullName(currentItem.category)}
-            </p>
-
-            {renderAttachments(currentItem.attachments)}
-
-            <div className="flex items-center justify-between mt-6">
-              <a
-                href={currentItem.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`inline-flex items-center px-4 py-2 border text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${
+                className={`inline-flex items-center px-3 py-1.5 border text-sm font-medium rounded-md transition-all ${
                   isDarkMode 
                     ? 'border-gray-600 text-gray-300 bg-gray-700 hover:bg-gray-600' 
                     : 'border-gray-300 text-gray-700 bg-white hover:bg-gray-50'
                 }`}
               >
-                <ExternalLink className="h-4 w-4 mr-2" />
+                <ExternalLink className="h-4 w-4 mr-1.5" />
                 Open Link
               </a>
 
-              <div className="space-x-3">
+              <div className="flex gap-2">
                 <button
                   onClick={skipItem}
                   disabled={loading || completing}
-                  className={`inline-flex items-center px-4 py-2 border text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed ${
+                  className={`inline-flex items-center px-3 py-1.5 border text-sm font-medium rounded-md transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
                     isDarkMode 
                       ? 'border-gray-600 text-gray-300 bg-gray-700 hover:bg-gray-600' 
                       : 'border-gray-300 text-gray-700 bg-white hover:bg-gray-50'
                   }`}
                 >
-                  <RefreshCw className="h-4 w-4 mr-2" />
+                  <RefreshCw className="h-4 w-4 mr-1.5" />
                   Skip
                 </button>
 
                 <button
                   onClick={markAsComplete}
                   disabled={completing}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {completing ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
                   ) : (
-                    <CheckCircle className="h-4 w-4 mr-2" />
+                    <CheckCircle className="h-4 w-4 mr-1.5" />
                   )}
-                  Mark as Complete
+                  Complete
                 </button>
               </div>
             </div>
