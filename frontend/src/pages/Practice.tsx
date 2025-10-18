@@ -869,21 +869,21 @@ const Practice: React.FC = () => {
             <div className={`shadow overflow-hidden rounded-lg ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
               <ul className={`divide-y ${isDarkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
                 {filteredItems.map((item) => (
-                  <li key={item.id} className={`px-6 py-4 ${
+                  <li key={item.id} className={`px-4 py-2 ${
                     isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'
                   }`}>
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-3 mb-2">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getCategoryColor(item.category)}`}>
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getCategoryColor(item.category)}`}>
                             {item.category.toUpperCase()}
                           </span>
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
                             isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-800'
                           }`}>
                             {item.subcategory}
                           </span>
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
                             filterStatus === 'completed' 
                               ? 'bg-green-100 text-green-800' 
                               : 'bg-yellow-100 text-yellow-800'
@@ -891,47 +891,103 @@ const Practice: React.FC = () => {
                             {filterStatus === 'completed' ? 'Done' : 'Pending'}
                           </span>
                           {item.starred && (
-                            <Star className="h-4 w-4 text-yellow-500 fill-current" />
+                            <Star className="h-3.5 w-3.5 text-yellow-500 fill-current" />
+                          )}
+                          {filterStatus === 'completed' && item.completed_at && (
+                            <span className={`text-xs ml-auto ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                              {new Date(item.completed_at).toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric'
+                              })}
+                            </span>
                           )}
                         </div>
-                        <a
-                          href={item.link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className={`text-sm font-medium hover:underline ${isDarkMode ? 'text-gray-100 hover:text-indigo-400' : 'text-gray-900 hover:text-indigo-600'}`}
-                        >
-                          {item.title}
-                        </a>
-                        {filterStatus === 'completed' && item.completed_at && (
-                          <p className={`text-sm mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                            Completed on {new Date(item.completed_at).toLocaleDateString('en-US', {
-                              month: 'short',
-                              day: 'numeric',
-                              year: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
-                          </p>
-                        )}
-                        {renderAttachments(item.attachments)}
+                        <div className="flex items-center gap-2">
+                          <a
+                            href={item.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={`text-sm font-medium hover:underline truncate flex-1 ${isDarkMode ? 'text-gray-100 hover:text-indigo-400' : 'text-gray-900 hover:text-indigo-600'}`}
+                            title={item.title}
+                          >
+                            {item.title}
+                          </a>
+                          {item.attachments && Object.keys(item.attachments).length > 0 && (
+                            <div className="flex items-center gap-1.5 flex-shrink-0">
+                              {Object.entries(item.attachments).map(([key, value]) => {
+                                const isDifficulty = key.toLowerCase().includes('diff');
+                                const getDifficultyColor = (val: string) => {
+                                  const lowerValue = val.toLowerCase();
+                                  if (lowerValue === 'easy') return 'text-green-600';
+                                  if (lowerValue === 'medium' || lowerValue === 'med') return 'text-yellow-600';
+                                  if (lowerValue === 'hard') return 'text-red-600';
+                                  return 'text-gray-600';
+                                };
+                                
+                                if (isValidUrl(value)) {
+                                  return (
+                                    <a
+                                      key={key}
+                                      href={value}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${
+                                        isDarkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                      }`}
+                                      title={key}
+                                    >
+                                      {key.toLowerCase().includes('youtube') || key.toLowerCase().includes('video') ? '📹' : 
+                                       key.toLowerCase().includes('github') || key.toLowerCase().includes('git') ? '💻' : '🔗'}
+                                    </a>
+                                  );
+                                } else if (isDifficulty) {
+                                  return (
+                                    <span
+                                      key={key}
+                                      className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-bold ${getDifficultyColor(value)}`}
+                                      title={`${key}: ${value}`}
+                                    >
+                                      {value}
+                                    </span>
+                                  );
+                                } else {
+                                  return (
+                                    <span
+                                      key={key}
+                                      className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs ${
+                                        isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'
+                                      }`}
+                                      title={`${key}: ${value}`}
+                                    >
+                                      {value}
+                                    </span>
+                                  );
+                                }
+                              })}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex items-center space-x-2 ml-4">
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
                         <a
                           href={item.link}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="p-2 text-gray-400 hover:text-gray-600"
+                          className={`p-1.5 rounded transition-colors ${
+                            isDarkMode ? 'text-gray-400 hover:text-gray-300 hover:bg-gray-600' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
+                          }`}
                           title="Open link"
                         >
-                          <ExternalLink className="h-5 w-5" />
+                          <ExternalLink className="h-4 w-4" />
                         </a>
                         {filterStatus === 'completed' && (
                           <button
-                            className="p-2 transition-colors text-green-600"
+                            className="p-1.5 transition-colors text-green-600"
                             disabled
                             title="Already completed"
                           >
-                            <CheckCircle2 className="h-5 w-5" />
+                            <CheckCircle2 className="h-4 w-4" />
                           </button>
                         )}
                       </div>
