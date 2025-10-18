@@ -895,9 +895,19 @@ const Practice: React.FC = () => {
             </div>
           </div>
           {!loadingCompletedItems && filteredItems.length > 0 && (
-            <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-              Showing {totalItems} {totalItems === 1 ? 'item' : 'items'}
-            </p>
+            <div className={`flex items-center gap-2.5 px-4 py-2 rounded-lg border ${
+              isDarkMode 
+                ? 'bg-gray-700/50 border-gray-600 text-gray-300' 
+                : 'bg-gray-50 border-gray-200 text-gray-700'
+            }`}>
+              <Hash className="h-4 w-4" />
+              <span className="text-sm font-medium">
+                <span className="font-bold text-indigo-600">{totalItems}</span>{' '}
+                <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
+                  {filterStatus} {totalItems === 1 ? 'item' : 'items'}
+                </span>
+              </span>
+            </div>
           )}
         </div>
 
