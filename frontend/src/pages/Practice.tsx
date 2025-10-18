@@ -834,48 +834,32 @@ const Practice: React.FC = () => {
             )}
 
             {/* Action Buttons */}
-            <div className="flex items-center justify-between gap-3">
-              <a
-                href={currentItem.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`inline-flex items-center px-3 py-1.5 border text-sm font-medium rounded-md transition-all ${
+            <div className="flex items-center gap-2">
+              <button
+                onClick={skipItem}
+                disabled={loading || completing}
+                className={`inline-flex items-center px-3 py-1.5 border text-sm font-medium rounded-md transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
                   isDarkMode 
                     ? 'border-gray-600 text-gray-300 bg-gray-700 hover:bg-gray-600' 
                     : 'border-gray-300 text-gray-700 bg-white hover:bg-gray-50'
                 }`}
               >
-                <ExternalLink className="h-4 w-4 mr-1.5" />
-                Open Link
-              </a>
+                <RefreshCw className="h-4 w-4 mr-1.5" />
+                Skip
+              </button>
 
-              <div className="flex gap-2">
-                <button
-                  onClick={skipItem}
-                  disabled={loading || completing}
-                  className={`inline-flex items-center px-3 py-1.5 border text-sm font-medium rounded-md transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
-                    isDarkMode 
-                      ? 'border-gray-600 text-gray-300 bg-gray-700 hover:bg-gray-600' 
-                      : 'border-gray-300 text-gray-700 bg-white hover:bg-gray-50'
-                  }`}
-                >
-                  <RefreshCw className="h-4 w-4 mr-1.5" />
-                  Skip
-                </button>
-
-                <button
-                  onClick={markAsComplete}
-                  disabled={completing}
-                  className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {completing ? (
-                    <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
-                  ) : (
-                    <CheckCircle className="h-4 w-4 mr-1.5" />
-                  )}
-                  Complete
-                </button>
-              </div>
+              <button
+                onClick={markAsComplete}
+                disabled={completing}
+                className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {completing ? (
+                  <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+                ) : (
+                  <CheckCircle className="h-4 w-4 mr-1.5" />
+                )}
+                Complete
+              </button>
             </div>
           </div>
         </div>
