@@ -43,7 +43,7 @@ const Practice: React.FC = () => {
   const [hasMore, setHasMore] = useState(true);
   const [totalItems, setTotalItems] = useState(0);
   const [loadingMore, setLoadingMore] = useState(false);
-  const itemsPerPage = 50;
+  const itemsPerPage = 100;
 
   const fetchStats = async () => {
     try {
