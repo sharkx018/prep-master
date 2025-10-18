@@ -107,7 +107,7 @@ const EngBlogs: React.FC = () => {
   return (
     <div>
       {/* Motivational Quote */}
-      <MotivationalQuote />
+      {/* <MotivationalQuote /> */}
       
       <div className="mb-8">
         <div className="flex items-center space-x-3 mb-4">

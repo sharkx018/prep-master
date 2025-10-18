@@ -90,7 +90,7 @@ const Stats: React.FC = () => {
   return (
     <div>
       {/* Motivational Quote */}
-      <MotivationalQuote />
+      {/* <MotivationalQuote /> */}
       
       <div className="mb-8">
         <h2 className={`text-2xl font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Statistics</h2>

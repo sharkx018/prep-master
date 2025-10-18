@@ -441,7 +441,7 @@ const Practice: React.FC = () => {
   return (
     <div>
       {/* Motivational Quote */}
-      <MotivationalQuote />
+      {/* <MotivationalQuote /> */}
       
       <div className="mb-8">
         <h2 className={`text-2xl font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Practice Mode</h2>
@@ -867,7 +867,7 @@ const Practice: React.FC = () => {
 
       {/* Filtered Items Section with Dropdown */}
       <div className="mt-12">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center mb-4">
           <div className="flex items-center space-x-4">
             <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
               Items List
@@ -893,22 +893,22 @@ const Practice: React.FC = () => {
                 <option value="completed">Completed</option>
               </select>
             </div>
-          </div>
-          {!loadingCompletedItems && filteredItems.length > 0 && (
-            <div className={`flex items-center gap-2.5 px-4 py-2 rounded-lg border ${
-              isDarkMode 
-                ? 'bg-gray-700/50 border-gray-600 text-gray-300' 
-                : 'bg-gray-50 border-gray-200 text-gray-700'
-            }`}>
-              <Hash className="h-4 w-4" />
-              <span className="text-sm font-medium">
-                <span className="font-bold text-indigo-600">{totalItems}</span>{' '}
-                <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
-                  {filterStatus} {totalItems === 1 ? 'item' : 'items'}
+            {!loadingCompletedItems && filteredItems.length > 0 && (
+              <div className={`flex items-center gap-2.5 px-4 py-2 rounded-lg border ${
+                isDarkMode 
+                  ? 'bg-gray-700/50 border-gray-600 text-gray-300' 
+                  : 'bg-gray-50 border-gray-200 text-gray-700'
+              }`}>
+                <Hash className="h-4 w-4" />
+                <span className="text-base font-medium">
+                  <span className={`font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{totalItems}</span>{' '}
+                  <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
+                    {filterStatus} {totalItems === 1 ? 'item' : 'items'}
+                  </span>
                 </span>
-              </span>
-            </div>
-          )}
+              </div>
+            )}
+          </div>
         </div>
 
         {loadingCompletedItems ? (

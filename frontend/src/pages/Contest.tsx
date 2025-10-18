@@ -149,7 +149,7 @@ const Contest: React.FC = () => {
   return (
     <div>
       {/* Motivational Quote */}
-      <MotivationalQuote />
+      {/* <MotivationalQuote /> */}
 
       <div className="mb-8">
         <h1 className={`text-3xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>

@@ -145,7 +145,7 @@ const Dashboard: React.FC = () => {
       
 
       {/* Motivational Quote */}
-      <MotivationalQuote />
+      {/* <MotivationalQuote /> */}
 
       {/* Progress Bar */}
       <div className={`rounded-xl shadow-lg p-8 mb-8 border transition-colors duration-300 ${
