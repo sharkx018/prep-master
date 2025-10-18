@@ -92,7 +92,7 @@ const FloatingContestWidget: React.FC<FloatingContestWidgetProps> = () => {
   const [contests, setContests] = useState<LeetCodeContest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [isMinimized, setIsMinimized] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(true);
   const [notifications, setNotifications] = useState(true);
   const [lastFetch, setLastFetch] = useState(Date.now());
 
